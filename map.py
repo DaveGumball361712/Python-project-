@@ -1,16 +1,28 @@
-import sys
-sys.stdout.reconfigure(encoding='utf-8')
-def map(rows=12, collums=12, width=3):
-    middle_line="─"*width
-    top_borders=("┌"+"┬".join([middle_line]*collums)+"┐")
-    bottom_borders=("└" +"┴".join([middle_line]*collums)+"┘")
-    middle_borders=("├"+"┼".join([middle_line]*collums)+"┤")
-    inside_line=("│"+"│".join([" "*width]*collums)+"│")
-    print (top_borders)
-    for i in range(rows):
-        print (inside_line)
-        if i < rows - 1:
-            print (middle_borders)
-    print (bottom_borders)
+`import pygame
 
-map()
+ROWS = 12
+COLLUMS = 12
+TILE = 48
+WIDTH = COLLUMS * TILE
+HEIGHT = ROWS * TILE
+
+pygame.init()
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    for row in range(ROWS):
+        for col in range(COLLUMS):
+            x = col * TILE
+            y = row * TILE
+            rect = pygame.Rect(x, y, TILE, TILE)
+            pygame.draw.rect(screen, (95, 140, 100), rect)          
+            pygame.draw.rect(screen, (25, 25, 35), rect, 1)         
+
+    pygame.display.flip()
+
+pygame.quit()
