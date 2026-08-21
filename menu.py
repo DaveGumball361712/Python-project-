@@ -57,8 +57,8 @@ class MainMenu:
         # biến để theo dõi sự kiện tiếp theo của menu
         self.next_state = None
 
-        center_x = WIDTH // 2
-        center_y = HEIGHT // 2
+        center_x = self.screen.get_width() // 2
+        center_y = self.screen.get_height() // 2
         
         start_btn = Button(center_x, center_y-50, 200, 60, "Start",action=self.StartGame)
         quit_btn = Button(center_x, center_y+50, 200, 60, "Quit",action=self.QuitGame)
