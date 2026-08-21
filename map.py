@@ -10,7 +10,6 @@ LOGO_CELLS=[(5,5),(5,6),(6,5),(6,6)]
 
 
 def load_images():
-    # phải gọi SAU khi đã set_mode (convert_alpha cần cửa sổ tồn tại)
     def load(name):
         img=py.image.load("images/"+name).convert_alpha()
         return py.transform.scale(img,(TILE,TILE))
