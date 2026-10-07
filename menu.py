@@ -1,5 +1,8 @@
 import pygame as p
 
+WIDTH = 576
+HEIGHT = 576
+
 # THIẾT LẬP BUTTON
 class Button(p.sprite.Sprite):
     def __init__(self, x, y, width, height, text, action = None, corner_radius = 15, border_width=5):
