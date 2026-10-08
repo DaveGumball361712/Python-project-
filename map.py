@@ -15,12 +15,13 @@ IMAGE_DATA={
     "logo":"logo",
     "mushroom":"mushroom",
 }
-Building_Image_Data={
+BUILDING_IMAGE_DATA={
     "tower":"tower",
     "village":"village",
     "port_village":"port_village",
     "mining_village":"mining_village",
     "treetop_village":"treetop_village",
+    "magical_port_village2":"magical_port_village2",
 }
 BUILDING_RULES={
     "village":{"on":["fields"],"next_to":{}},
@@ -29,8 +30,17 @@ BUILDING_RULES={
     "magical_village":{"on":["fields"],"next_to":{"mushroom":1}},
     "magical_port_village":{"on":["fields"],"next_to":{"mushroom":1,"water":1}},
     "treetop_village":{"on":["forest"],"next_to":{"forest":4},"diagonal":False},
-    "Tower_of_light":{"on":["fields"],"next_to":{},"needs":["magical village"]}
+    "tower_of_light":{"on":["fields"],"next_to":{},"needs":["magical_village"]}
 }
+
+BUILD_PRIORITY = [
+    "treetop_village",        
+    "magical_port_village",   
+    "magical_village",        
+    "port_village",           
+    "mining_village",         
+    "village",                
+]
 
 def load_images():
     def load(name):
@@ -38,12 +48,27 @@ def load_images():
         return py.transform.scale(img,(TILE,TILE))
     return {
         "forest":load("forest.png"),
+        "forest2":load("forest2.png"),
+        "forest3":load("forest3.png"),
+        "forest4":load("forest.png"),
         "fields":load("fields.png"),
-        "rocks":load("Rocks.png"),
+        "rocks":load("rocks.png"),
+        "rocks2":load("rocks2.png"),
+        "rocks3":load("rocks3.png"),
         "water":load("water.png"),
         "logo":load("logo-ptit.png"),
         "mushroom":load("mushroom.png"),
         "tower_of_light":load("tower.png"),
+        "tower_of_light2":load("tower2.png"),
+        "village":load("village.png"),
+        "village2":load("village2.png"),
+        "treetop_village":load("treetop_village.png"),
+        "treetop_village2":load("treetop_village2.png"),
+        "mining_village":load("mining_village.png"),
+        "mining_village2":load("mining_village2.png"),
+        "port_village":load("port_village.png"),
+        "port_village2":load("port_village2.png"),
+        "magical_port_village2":load("magical_port_village2.png"),
     }
 
 def generate_map():
@@ -58,26 +83,30 @@ def generate_map():
     game_map=[]
     i=0
     for row in range(ROWS):
-        hang=[]
+        map=[]
         for col in range(COLLUMS):
             type="logo" if (row,col)==(lr,lc) else bag[i]
             if type != "logo":
                 i+=1
-            hang.append({
+            map.append({
                 "type":type,
                 "building":None,
                 "level":0,
                 "darkness":False,
             })
-        game_map.append(hang)
+        game_map.append(map)
     return game_map
 
 def draw_map(screen, game_map, images):
     for row in range(ROWS):
         for col in range(COLLUMS):
             tile=game_map[row][col]
-            tile_type=IMAGE_DATA[tile["type"]]
-            screen.blit(images[tile_type],(col*TILE,row*TILE))
+            screen.blit(images[IMAGE_DATA[tile["type"]]],(col*TILE,row*TILE))
+            b=tile["building"]
+            if b is not None:
+                img=BUILDING_IMAGE_DATA.get(b)
+                if img is not None:
+                    screen.blit(images[img],(col*TILE,row*TILE))
 
 def neighbor_tile(game_map,row,col,diagonal=True):
     direction=[(-1,0),(1,0),(0,1),(0,-1)]
@@ -124,6 +153,12 @@ def building_check(game_map):
                 return True
     return False
 
+def building_for_tile(game_map, row, col):
+    for name in BUILD_PRIORITY:
+        if placement(game_map, row, col, name):
+            return name          
+    return None                 
+
 def generate_map_new():
     for _ in range(1000):                
         game_map = generate_map()
@@ -146,6 +181,13 @@ def run_game(screen):
         for event in py.event.get():
             if event.type==py.QUIT:
                 return "QUIT"
+            if event.type==py.MOUSEBUTTONDOWN:
+                col=event.pos[0]//TILE
+                row=event.pos[1]//TILE
+                if 0<=row<ROWS and 0<=col<COLLUMS:
+                    name=building_for_tile(game_map,row,col)
+                    if name is not None:
+                        build(game_map,row,col,name)
         draw_map(screen, game_map,images)
         py.display.flip()
 
