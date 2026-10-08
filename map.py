@@ -50,7 +50,7 @@ def load_images():
         "forest":load("forest.png"),
         "forest2":load("forest2.png"),
         "forest3":load("forest3.png"),
-        "forest4":load("forest.png"),
+        "forest4":load("forest4.png"),
         "fields":load("fields.png"),
         "rocks":load("rocks.png"),
         "rocks2":load("rocks2.png"),
