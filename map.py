@@ -1,10 +1,14 @@
 import pygame as py
 import random as r
+from menu import Button
 
 ROWS=12
 COLLUMS=12
 TILE=48
-WIDTH=COLLUMS*TILE
+
+MAP_WIDTH=COLLUMS*TILE
+UI_WIDTH = 250 
+WIDTH = MAP_WIDTH + UI_WIDTH
 HEIGHT=ROWS*TILE
 LOGO_CELLS=[(5,5),(5,6),(6,5),(6,6)]
 IMAGE_DATA={
@@ -142,12 +146,36 @@ def build(game_map, row, col, name):
 def run_game(screen):
     images=load_images()
     game_map=generate_map_new()
-    while True:
+    is_playing = True
+    def action_quit():
+        nonlocal is_playing
+        is_playing = False
+    btn_build_village = Button(x=MAP_WIDTH + 125, y=450, width=160, height=50, text="Build")
+
+    btn_quit = Button(x=MAP_WIDTH + 125, y=520, width=160, height=50, text="Quit", action=action_quit)
+
+    while is_playing:
         for event in py.event.get():
             if event.type==py.QUIT:
                 return "QUIT"
+            # event listener
+            btn_build_village.handle_event(event)
+            btn_quit.handle_event(event)
+
         draw_map(screen, game_map,images)
+
+        # create background for menu in game
+        py.draw.rect(screen, (0,0,0), (MAP_WIDTH, 0, UI_WIDTH, HEIGHT))
+
+        # create button
+        btn_build_village.update()
+        screen.blit(btn_build_village.image, btn_build_village.rect)
+
+        btn_quit.update()
+        screen.blit(btn_quit.image, btn_quit.rect)
+
         py.display.flip()
+    return "QUIT"
 
 if __name__=="__main__":
     py.init()
