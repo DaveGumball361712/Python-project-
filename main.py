@@ -3,6 +3,7 @@ import sys
 import menu
 import map
 import darkness
+import economy 
 
 pygame.init()
 screen = pygame.display.set_mode((576, 576))
@@ -42,7 +43,9 @@ while True:
             
             # Thời gian vẫn đếm nhịp đều đặn
             if event.type == SU_KIEN_1_GIAY:
-                tai_nguyen_go += 5
+
+                # GỌI NÃO BỘ KINH TẾ CỦA ĐẠT CHẠY MỖI GIÂY
+                economy.cap_nhat_tai_nguyen(ban_do_game)
                 
                 # Bóng tối tính toán mỗi giây
                 o_bi_nuot = quan_ly_bong_toi.update(1.0)
