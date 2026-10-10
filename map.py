@@ -71,7 +71,16 @@ def load_images():     #Ham load hinh anh
     def load(name):    #Ham nap ten anh
         img=py.image.load("images/"+name).convert_alpha() #img se load anh dua vao duong dan cua file images/tencuaanh
         return py.transform.scale(img,(TILE,TILE))      #hien ra hinh anh theo ti le cua bien SCALE 
+
+    def load_icon(name):
+        img = py.image.load("images/" + name).convert_alpha()
+        return py.transform.scale(img, (25, 25))
+    
     return {
+        "icon_wood": load_icon("icon_wood.png"),
+        "icon_stone": load_icon("icon_stone.png"),
+        "icon_magic": load_icon("icon_magic.png"),
+        "icon_tech": load_icon("icon_tech.png"),
         "forest":load("forest.png"),
         "forest2":load("forest2.png"),
         "forest3":load("forest3.png"),
@@ -239,18 +248,44 @@ def run_game(screen):                                  #ham de chay game
     def action_quit():
         nonlocal is_playing
         is_playing = False
-    btn_build_village = Button(x=MAP_WIDTH + 125, y=450, width=160, height=50, text="Build")
+    font_small = py.font.Font(None,24)
+    font_main = py.font.Font(None,32)
 
-    btn_quit = Button(x=MAP_WIDTH + 125, y=520, width=160, height=50, text="Quit", action=action_quit)
+    btn_quit = Button(x=MAP_WIDTH + 220, y=556, width=30, height=30, text="x", action=action_quit)
 
+    def resource_text(surface, x, y, width, amount, increment, icon_img):
+        # Icon resource
+        surface.blit(icon_img, (x +5, y + 8))
+        # Current amount
+        amt_text = font_main.render(str(amount), True, (50, 50, 50))
+        surface.blit(amt_text, (x + 35, y + 10))
+        # Current increment
+        inc_text = font_small.render(f"+{increment}", True, (100, 100, 100))
+
+        inc_x = x + width - inc_text.get_width() - 5 
+        surface.blit(inc_text, (inc_x, y + 20))
+
+    res_height = 80
+    col_width = UI_WIDTH // 2 
+    row_height = res_height // 2
+
+    resource_surface = py.Surface((UI_WIDTH, res_height))
+    resource_surface.fill((204,201,195))
+    line_color = (170, 155, 140)
+    py.draw.line(resource_surface, line_color, (0,row_height), (UI_WIDTH, row_height), 3)
+    py.draw.line(resource_surface, line_color, (col_width, 0), (col_width, res_height), 2)
+    py.draw.line(resource_surface, line_color, (0, res_height-2), (UI_WIDTH, res_height-2), 3)
+
+    Information_Surface = py.Surface((UI_WIDTH, HEIGHT))
+    Information_Surface.fill((204,201,195))
+    
     while is_playing:
-        #bat du kien trong game 
+        mouse_x, mouse_y = py.mouse.get_pos()
+        # Event listener
         for event in py.event.get(): 
-            #neu == voi quit thi se tat game
             if event.type==py.QUIT: 
                 return "QUIT"
-            # event listener
-            btn_build_village.handle_event(event)
+            
             btn_quit.handle_event(event)
 
             # ham bat click chuot trai xem dang click tren hang nao cot nao
@@ -261,16 +296,51 @@ def run_game(screen):                                  #ham de chay game
                 # if hang va cot trong ban do, thi se thu dung ham up(..) -> co nang cap duoc hay khong?
                 if 0<=row<ROWS and 0<=col<COLLUMS:
                     up(game_map,row,col)
-        #ve ban do
+        
+        # Create Map
         draw_map(screen, game_map,images)
 
-        # create background for menu in game
-        py.draw.rect(screen, (0,0,0), (MAP_WIDTH, 0, UI_WIDTH, HEIGHT))
+        # Create Layer 1 (Resource)
+        screen.blit(resource_surface, (MAP_WIDTH,0))
+        # Change amount and increment
+        resource_text(screen, MAP_WIDTH, 0, col_width, amount=1, increment=5, icon_img=images["icon_wood"])
+        resource_text(screen, MAP_WIDTH + col_width, 0, col_width, amount=1, increment=6, icon_img=images["icon_stone"])
+        resource_text(screen, MAP_WIDTH, row_height, col_width, amount=1, increment=5, icon_img=images["icon_magic"])
+        resource_text(screen, MAP_WIDTH + col_width, row_height, col_width, amount=1, increment=6, icon_img=images["icon_tech"])
+
+        # Create Layer 2 (Information)
+        screen.blit(Information_Surface, (MAP_WIDTH, 80))
+
+        if mouse_x >= MAP_WIDTH and mouse_y < 80:
+            col_idx = (mouse_x - MAP_WIDTH) // 125
+            row_idx = mouse_y // 40
+
+            # { (row, col): [Tên, Số lượng, Tốc độ thu thập] } 
+            resource_data = {
+                (0, 0): ["Wood", 1, 5.2],
+                (0, 1): ["Stone", 1, 6.0],
+                (1, 0): ["Mana", 1, 5.0],
+                (1, 1): ["Tech", 1, 6.0]
+            }
+
+            # Information of resource rely on mouse_pos
+            current_res = resource_data.get((row_idx, col_idx))
+
+            if current_res:
+                res_name = current_res[0]
+                res_amount = current_res[1]
+                res_rate = current_res[2]
+
+                line1 = f"{res_name}: {res_amount}"
+                line2 = f"+{res_rate:.1f} per second"
+
+                text1 = font_small.render(line1, True, (60, 60, 60))
+                text2 = font_small.render(line2, True, (60, 60, 60))
+
+                screen.blit(text1, (MAP_WIDTH + 15, 100))
+                screen.blit(text2, (MAP_WIDTH + 15, 130))
 
         # create button
-        btn_build_village.update()
-        screen.blit(btn_build_village.image, btn_build_village.rect)
-
         btn_quit.update()
         screen.blit(btn_quit.image, btn_quit.rect)
 
