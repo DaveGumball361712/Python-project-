@@ -1,6 +1,7 @@
 import pygame as py
 import random as r
 from menu import Button
+from Economy import EconomyManager
 
 ROWS=12
 COLLUMS=12
@@ -244,6 +245,10 @@ def up(game_map, row, col):                            #ham nang cap cong trinh
 def run_game(screen):                                  #ham de chay game
     images=load_images()                        
     game_map=generate_map_new()
+
+    eco = EconomyManager()
+    clock = py.time.Clock()
+
     is_playing = True
     def action_quit():
         nonlocal is_playing
@@ -280,6 +285,9 @@ def run_game(screen):                                  #ham de chay game
     Information_Surface.fill((204,201,195))
     
     while is_playing:
+        dt = clock.tick(60) / 1000.0 
+        eco.update(dt, game_map)
+
         mouse_x, mouse_y = py.mouse.get_pos()
         # Event listener
         for event in py.event.get(): 
@@ -303,10 +311,14 @@ def run_game(screen):                                  #ham de chay game
         # Create Layer 1 (Resource)
         screen.blit(resource_surface, (MAP_WIDTH,0))
         # Change amount and increment
-        resource_text(screen, MAP_WIDTH, 0, col_width, amount=1, increment=5, icon_img=images["icon_wood"])
-        resource_text(screen, MAP_WIDTH + col_width, 0, col_width, amount=1, increment=6, icon_img=images["icon_stone"])
-        resource_text(screen, MAP_WIDTH, row_height, col_width, amount=1, increment=5, icon_img=images["icon_magic"])
-        resource_text(screen, MAP_WIDTH + col_width, row_height, col_width, amount=1, increment=6, icon_img=images["icon_tech"])
+        resource_text(screen, MAP_WIDTH, 0, col_width, 
+                    amount=eco.inventory['W'], increment=eco.production_per_sec['W'], icon_img=images["icon_wood"])
+        resource_text(screen, MAP_WIDTH + col_width, 0, col_width, 
+                    amount=eco.inventory['S'], increment=eco.production_per_sec['S'], icon_img=images["icon_stone"])
+        resource_text(screen, MAP_WIDTH, row_height, col_width, 
+                    amount=eco.inventory['M'], increment=eco.production_per_sec['M'], icon_img=images["icon_magic"])
+        resource_text(screen, MAP_WIDTH + col_width, row_height, col_width, 
+                    amount=eco.inventory['T'], increment=eco.production_per_sec['T'], icon_img=images["icon_tech"])
 
         # Create Layer 2 (Information)
         screen.blit(Information_Surface, (MAP_WIDTH, 80))
@@ -317,10 +329,10 @@ def run_game(screen):                                  #ham de chay game
 
             # { (row, col): [Tên, Số lượng, Tốc độ thu thập] } 
             resource_data = {
-                (0, 0): ["Wood", 1, 5.2],
-                (0, 1): ["Stone", 1, 6.0],
-                (1, 0): ["Mana", 1, 5.0],
-                (1, 1): ["Tech", 1, 6.0]
+                (0, 0): ["Wood", int(eco.inventory['W']), eco.production_per_sec['W']],
+                (0, 1): ["Stone", int(eco.inventory['S']), eco.production_per_sec['S']],
+                (1, 0): ["Mana", int(eco.inventory['M']), eco.production_per_sec['M']],
+                (1, 1): ["Tech", int(eco.inventory['T']), eco.production_per_sec['T']]
             }
 
             # Information of resource rely on mouse_pos

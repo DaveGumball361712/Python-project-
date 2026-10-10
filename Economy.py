@@ -2,100 +2,96 @@ import time
 import subprocess
 import os
 
-inventory = {
-    'W' : 0,
-    'S' : 0,
-    'M' : 0,
-    'T' : 0,
-}
-
-base_rate = {
-    'W' : 3,
-    'S' : 3,
-    'M' : 1,
-    'T' : 1
-}
-
-build_cost = {
-    'W': {'W': 10},            #Xưởng gỗ
-    'S': {'W': 20, 'S': 10},   #Mỏ Đá 
-    'M': {'S': 50, 'M': 5},    #Giếng Mana 
-    'T': {'W': 100, 'M': 20}   #Nhà Tech 
-}
-
-def count_adjacent(x,y, grid):
-    rows = len(grid)
-    cols = len(grid[0])
-    directions = [(-1,0), (1,0), (0, -1), (0, 1)]
-    count = 0
-
-    current_key = grid[x][y]
-    for dx, dy in directions:
-        nx = x + dx
-        ny = y + dy
+class EconomyManager:
+    def __init__(self):
+        self.inventory = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
+        self.base_rate = {'W': 3, 'S': 3, 'M': 1, 'T': 1}
+        self.production_per_sec = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
         
-        if 0 <= nx < rows and 0 <= ny < cols:
-            if grid[nx][ny] == current_key:
-                count += 1
-    return count
+        self.timer = 0.0
+        self.tick_rate = 1.0 
+        
+        self.building_to_res = {
+            "village": "W", "village2": "W",
+            "treetop_village": "W", "treetop_village2": "W",
+            "port_village": "W", "port_village2": "W",
+            "mining_village": "S", "mining_village2": "S",
+            "magical_village": "M", "magical_village2": "M",
+            "magical_port_village": "M", "magical_port_village2": "M",
+            "tower_of_light": "T", "tower_of_light2": "T"
+        }
 
-def one_production(x,y, grid):
-    neighbor = count_adjacent(x,y,grid)
-    current_key = grid[x][y]
-    if current_key == "E":
-        return 0
-    
-    production = base_rate[current_key]*(1 + 0.25*neighbor)
-    return production
+    # Hàm lấy mã tài nguyên từ ô đất trên map
+    def get_res_type(self, tile):
+        b = tile["building"]
+        if b is not None and b in self.building_to_res:
+            return self.building_to_res[b]
+            
+        # Nếu không có công trình, xét đến Địa hình đã nâng cấp
+        t = tile["type"]
+        # Chỉ những địa hình cấp 2 trở lên mới trả về loại tài nguyên
+        if t in ["forest2", "forest3", "forest4"]: return "W"
+        if t in ["rocks2", "rocks3"]: return "S"
+        if t in ["mushroom2"]: return "M"
+        
+        # Địa hình mặc định không sinh ra gì cả
+        return "E"
 
-def total_production(grid):
-    rows = len(grid)
-    cols = len(grid[0])
-    total_production = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
-    for x in range(rows):
-        for y in range(cols):
-            current_key = grid[x][y]
-            if current_key != "E":
-                total_production[current_key] += one_production(x,y,grid)
-    return total_production
+    def count_adjacent(self, x, y, grid):
+        rows, cols = len(grid), len(grid[0])
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        count = 0
+        
+        # Lấy loại tài nguyên của ô trung tâm đang xét (Từ công trình hoặc từ địa hình cấp 2)
+        current_res = self.get_res_type(grid[x][y])
+        if current_res == "E": 
+            return 0
+        
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < rows and 0 <= ny < cols:
+                neighbor_tile = grid[nx][ny]
+                
+                # Mỏ đá đứng cạnh forest2, thì forest2 vẫn được tính là "forest" để buff cho gỗ, không buff cho đá.
+                neighbor_type = neighbor_tile["type"].rstrip("0123456789")
+                
+                # Luật Buff
+                if current_res == "W" and neighbor_type == "forest": count += 1
+                elif current_res == "S" and neighbor_type == "rocks": count += 1
+                elif current_res == "M" and neighbor_type == "mushroom": count += 1
+                
+        return count
 
-def build_structure(x,y,type,grid):
-    if grid[x][y] == 'E':
-        print("Xây thất bại!")
-        return False
-    chi_phi = build_cost[type] 
-    for tai_nguyen, gia_tien in chi_phi.items():
-        if inventory[tai_nguyen] < gia_tien:
-            print('Không đủ tiền, xây thất bại!')
-            return False
+    def one_production(self, x, y, grid):
+        current_key = self.get_res_type(grid[x][y])
+        if current_key == "E":
+            return 0
+            
+        neighbor = self.count_adjacent(x, y, grid)
+        
+        # Nếu muốn level của Công trình ảnh hưởng đến số lượng tài nguyên:
+        # level = grid[x][y].get("level", 1)
+        # return (self.base_rate[current_key] * level) * (1 + 0.25 * neighbor)
+        
+        # Tạm thời giữ 
+        return self.base_rate[current_key] * (1 + 0.25 * neighbor)
 
-    for tai_nguyen, gia_tien in chi_phi.items:
-        inventory[tai_nguyen] -= gia_tien
+    def total_production(self, grid):
+        rows = len(grid)
+        cols = len(grid[0])
+        total = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
+        for x in range(rows):
+            for y in range(cols):
+                current_key = self.get_res_type(grid[x][y])
+                if current_key != "E":
+                    total[current_key] += self.one_production(x, y, grid)
+        return total
 
-    grid[x][y] = type
-    print(f'Xây nhà thành công!')
-    return True
-
-map_game = [
-    ['E', 'W', 'W', 'S'],
-    ['W', 'W', 'W', 'S'],
-    ['S', 'S', 'M', 'T'],
-    ['M', 'W', 'W', 'T']
-]
-
-print("START GAME!")
-
-build_structure(0, 0, 'S', map_game) 
-build_structure(1, 1, 'W', map_game) 
-while True:
-    subprocess.run('cls' if os.name == 'nt' else 'clear', shell=True)
-
-    production_per_sec = total_production(map_game)
-    for resource_kind in production_per_sec:
-        inventory[resource_kind] += production_per_sec[resource_kind]
-    print(f"""Storage:\n| Wood: {inventory['W']} wood\n| Stone: {inventory['S']} stone \n| Mana: {inventory['M']} mana \n| Technology: {inventory['T']} tech""")
-
-    time.sleep(1)
-
-    print("START GAME!\n")
-
+    # Hàm được gọi liên tục để tính toán thời gian thực
+    def update(self, dt, grid):
+        self.timer += dt
+        if self.timer >= self.tick_rate:
+            self.timer -= self.tick_rate
+            self.production_per_sec = self.total_production(grid)
+            for res in self.production_per_sec:
+                self.inventory[res] += self.production_per_sec[res]
