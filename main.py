@@ -26,6 +26,8 @@ SU_KIEN_1_GIAY = pygame.USEREVENT + 1
 pygame.time.set_timer(SU_KIEN_1_GIAY, 1000)
 tai_nguyen_go = 0
 
+cong_trinh_dang_chon = "village"
+
 while True:
     if trang_thai == "MENU":
         ket_qua = man_hinh_menu.run()
@@ -40,6 +42,39 @@ while True:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+
+            # TƯƠNG TÁC CHUỘT: XÂY DỰNG
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1: # Click chuột trái
+                    mouse_x, mouse_y = event.pos
+                    col = mouse_x // 48
+                    row = mouse_y // 48
+                    
+                    # 1. Kiểm tra luật xây dựng
+                    if map.placement(ban_do_game, row, col, cong_trinh_dang_chon):
+                        
+                        # 2. Lấy mã kinh tế và giá tiền
+                        ma_kinh_te = economy.lay_ma_cong_trinh({"building": cong_trinh_dang_chon})
+                        chi_phi = economy.build_cost.get(ma_kinh_te, {})
+                        
+                        # 3. Kiểm tra xem có đủ tiền không
+                        du_tien = True
+                        for tai_nguyen, gia_tien in chi_phi.items():
+                            if economy.inventory.get(tai_nguyen, 0) < gia_tien:
+                                du_tien = False
+                                break
+                        
+                        if du_tien:
+                            # 4. Trừ tiền và cắm nhà
+                            for tai_nguyen, gia_tien in chi_phi.items():
+                                economy.inventory[tai_nguyen] -= gia_tien
+                                
+                            map.build(ban_do_game, row, col, cong_trinh_dang_chon)
+                            print(f"+++ Da xay {cong_trinh_dang_chon} tai ({row}, {col}) +++")
+                        else:
+                            print(f"--- Khong du tien xay {cong_trinh_dang_chon}! ---")
+                    else:
+                        print(f"--- Sai luat! Khong the dat {cong_trinh_dang_chon} o ({row}, {col}) ---")
             
             # Thời gian vẫn đếm nhịp đều đặn
             if event.type == SU_KIEN_1_GIAY:
