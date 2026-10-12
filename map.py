@@ -97,31 +97,53 @@ def load_images():     #Ham load hinh anh
         "magical_village2":load("magical_village2.png"),
     }
 
+def grow_blob(occupied, size):
+    empties = [(row,col) for row in range(ROWS) for col in range(COLLUMS) if (row,col) not in occupied]
+    if not empties:
+        return []
+    seed = r.choice(empties)
+    blob = [seed]; occupied.add(seed); frontier = [seed]
+    while len(blob) < size and frontier:
+        cell = r.choice(frontier)                      
+        neighbors = [(cell[0]+dr,cell[1]+dc) for dr,dc in [(-1,0),(1,0),(0,-1),(0,1)]]
+        neighbors = [(nr,nc) for (nr,nc) in neighbors
+                if 0<=nr<ROWS and 0<=nc<COLLUMS and (nr,nc) not in occupied]
+        if neighbors:
+            next = r.choice(neighbors)                       
+            blob.append(next); occupied.add(next); frontier.append(next)
+        else:
+            frontier.remove(cell)                    
+    return blob
+
 def generate_map():  #ham tao map
     lr,lc=r.choice(LOGO_CELLS)  #bien chon hang va cot cua logo 
     n_forest=r.randint(37,40)   #bien chon so forest tren ban do
     n_rocks=r.randint(14,15)    #bien chon so rocks tren ban do
-    n_water=r.randint(15,18)    #bien chon so water tren ban do
+    n_water=r.randint(27,33)    #bien chon so water tren ban do
     n_mushroom=4                #bien chon so mushroom tren ban do
     n_fields=144-1-n_forest-n_rocks-n_water-n_mushroom     #tinh cac o fields bang cach lay 144 tru so cac o con lai
-    bag=(["forest"]*n_forest+["rocks"]*n_rocks+["water"]*n_water+["fields"]*n_fields+["mushroom"]*n_mushroom)
+    occupied = {(lr,lc)}                     
+    water = []; remaining = n_water
+    while remaining > 0:
+        lake_size = min(remaining, r.randint(3,7))  
+        blob = grow_blob(occupied, lake_size)
+        if not blob:
+            break
+        water += blob; remaining -= len(blob)
+    water = set(water)
+    bag=(["forest"]*n_forest+["rocks"]*n_rocks+["fields"]*n_fields+["mushroom"]*n_mushroom)
     r.shuffle(bag)              #sau do random toan bo so o trong bag de chung xuat hien ngau nhien
-    game_map=[]                 #tao bien game_map rong
-    i=0                                                 
-    for row in range(ROWS):     #so row 
-        map=[]                  #map rong
-        for col in range(COLLUMS):#so collums
-            type="logo" if (row,col)==(lr,lc) else bag[i]   #type xem hang,cot dang xet co chua logo hay khong
-            if type != "logo":     #neu khong phai logo thi bien i+1
-                i+=1
-            map.append({            #them vao map[] ten loai o do cung voi cac chi so mac dinh khac
-                "type":type,
-                "building":None,
-                "level":0,
-                "darkness":False,
-            })
-        game_map.append(map)     #sau khi ket thuc vong lap thi game_map se chua du lieu trong map
+    game_map = []; i = 0
+    for row in range(ROWS):
+        hang = []
+        for col in range(COLLUMS):
+            if (row,col) == (lr,lc):     type = "logo"
+            elif (row,col) in water:     type = "water"
+            else:                        type = bag[i]; i += 1
+            hang.append({"type":type,"building":None,"level":0,"darkness":False})
+        game_map.append(hang)
     return game_map
+
 
 def draw_map(screen, game_map, images):    #ham ve map
     for row in range(ROWS):                
@@ -177,7 +199,7 @@ def placement(game_map,row,col,name):           #ham kiem tra dieu kien xay
     if needs:                                               #xet cac tile co dieu kien needs
         has=0   
         for on in neighbor_tile(game_map,row,col,diagonal=False):     #kiem tra cac tile lan can cua tile dang xet
-            if on["building"] is not None and on["building"].rstrip("123456789") in needs:     #neu on thoa dieu kien khac none va on dung voi needs thi bien has+1
+            if on["building"] is not None and on["building"].rstrip("0123456789") in needs:     #neu on thoa dieu kien khac none va on dung voi needs thi bien has+1
                 has+=1
         if has<1:
             return False     #neu khong du thi return false

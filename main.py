@@ -6,7 +6,7 @@ import darkness
 import economy 
 
 pygame.init()
-screen = pygame.display.set_mode((576, 576))
+screen = pygame.display.set_mode((map.WIDTH, map.HEIGHT))
 pygame.display.set_caption("Stop the Darkness - Đồ án Nhóm")
 
 clock = pygame.time.Clock()
@@ -14,19 +14,32 @@ clock = pygame.time.Clock()
 trang_thai = "MENU"
 man_hinh_menu = menu.MainMenu(screen)
 
-# TÍCH HỢP MAP MỚI: Tải hình ảnh 1 lần và sinh bản đồ dữ liệu
+# 1. TÍCH HỢP MAP CỦA PHÚT
 hinh_anh_map = map.load_images()
 ban_do_game = map.generate_map_new()
 
-# Khởi tạo Nhạc trưởng Bóng tối
-quan_ly_bong_toi = darkness.DarknessManager(12, 12)
+# 2. TÍCH HỢP BÓNG TỐI CỦA BẢO
+quan_ly_bong_toi = darkness.DarknessManager(map.COLLUMS, map.ROWS)
+# Đặt tốc độ khởi đầu chuẩn 6s/ô của Bảo (nếu cậu muốn test nhanh 0.2s thì thêm dấu # ở đầu dòng dưới nhé)
+quan_ly_bong_toi.set_resistance_level(0)
 
-# Bộ đếm thời gian
+# Hàm phụ trợ: Quét bản đồ của Phút để báo cấp độ Tower of Light cho Bảo
+def dong_bo_cap_do_thap(game_map, dark_mgr):
+    cap_do_thap = 0
+    for r in range(map.ROWS):
+        for c in range(map.COLLUMS):
+            tile = game_map[r][c]
+            # Chỉ tính tháp khi ô đó chưa bị bóng tối nuốt
+            if not tile["darkness"] and tile["building"] is not None:
+                if tile["building"] == "tower_of_light":
+                    cap_do_thap = max(cap_do_thap, 1)
+                elif tile["building"] == "tower_of_light2":
+                    cap_do_thap = max(cap_do_thap, 2)
+    dark_mgr.set_resistance_level(cap_do_thap)
+
+# Bộ đếm thời gian 1 giây
 SU_KIEN_1_GIAY = pygame.USEREVENT + 1
 pygame.time.set_timer(SU_KIEN_1_GIAY, 1000)
-tai_nguyen_go = 0
-
-cong_trinh_dang_chon = "village"
 
 while True:
     if trang_thai == "MENU":
@@ -43,60 +56,47 @@ while True:
                 pygame.quit()
                 sys.exit()
 
-            # TƯƠNG TÁC CHUỘT: XÂY DỰNG
+            # TƯƠNG TÁC CHUỘT: GỌI HÀM up() CỦA PHÚT + CẬP NHẬT THÁP CHO BẢO
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # Click chuột trái
-                    mouse_x, mouse_y = event.pos
-                    col = mouse_x // 48
-                    row = mouse_y // 48
-                    
-                    # 1. Kiểm tra luật xây dựng
-                    if map.placement(ban_do_game, row, col, cong_trinh_dang_chon):
-                        
-                        # 2. Lấy mã kinh tế và giá tiền
-                        ma_kinh_te = economy.lay_ma_cong_trinh({"building": cong_trinh_dang_chon})
-                        chi_phi = economy.build_cost.get(ma_kinh_te, {})
-                        
-                        # 3. Kiểm tra xem có đủ tiền không
-                        du_tien = True
-                        for tai_nguyen, gia_tien in chi_phi.items():
-                            if economy.inventory.get(tai_nguyen, 0) < gia_tien:
-                                du_tien = False
-                                break
-                        
-                        if du_tien:
-                            # 4. Trừ tiền và cắm nhà
-                            for tai_nguyen, gia_tien in chi_phi.items():
-                                economy.inventory[tai_nguyen] -= gia_tien
-                                
-                            map.build(ban_do_game, row, col, cong_trinh_dang_chon)
-                            print(f"+++ Da xay {cong_trinh_dang_chon} tai ({row}, {col}) +++")
-                        else:
-                            print(f"--- Khong du tien xay {cong_trinh_dang_chon}! ---")
-                    else:
-                        print(f"--- Sai luat! Khong the dat {cong_trinh_dang_chon} o ({row}, {col}) ---")
+                    col = event.pos[0] // map.TILE
+                    row = event.pos[1] // map.TILE
+                    if 0 <= row < map.ROWS and 0 <= col < map.COLLUMS:
+                        map.up(ban_do_game, row, col)
+                        # Sau khi xây/nâng cấp, kiểm tra xem có Tower of Light không để báo cho Bảo
+                        dong_bo_cap_do_thap(ban_do_game, quan_ly_bong_toi)
             
-            # Thời gian vẫn đếm nhịp đều đặn
+            # NHỊP ĐẾM MỖI GIÂY
             if event.type == SU_KIEN_1_GIAY:
-
-                # GỌI NÃO BỘ KINH TẾ CỦA ĐẠT CHẠY MỖI GIÂY
+                # 1. Gọi não bộ kinh tế của Đạt
                 economy.cap_nhat_tai_nguyen(ban_do_game)
                 
-                # Bóng tối tính toán mỗi giây
+                # 2. Gọi thuật toán bóng tối của Bảo
                 o_bi_nuot = quan_ly_bong_toi.update(1.0)
                 if o_bi_nuot:
-                    print(f"!!! Darkness swallowed cell {o_bi_nuot} !!!")
-                    # (Tương lai: Cập nhật biến "darkness": True vào dữ liệu map mới tại đây)
+                    # Lưu ý: Bảo trả về (x, y) tương ứng với (col, row)
+                    c_dark, r_dark = o_bi_nuot
+                    if 0 <= r_dark < map.ROWS and 0 <= c_dark < map.COLLUMS:
+                        ban_do_game[r_dark][c_dark]["darkness"] = True
+                    
+                    # Nếu bóng tối nuốt trúng ô có Tower of Light thì cập nhật giảm kháng cự về 0
+                    dong_bo_cap_do_thap(ban_do_game, quan_ly_bong_toi)
+                    print(f"!!! Bong toi nuot o (col={c_dark}, row={r_dark}) | Toc do: {quan_ly_bong_toi.current_tick_rate}s/o !!!")
 
-        # GỌI HÀM VẼ MAP KIỂU MỚI CỦA BẠN CẬU
+                # 3. Kiểm tra điều kiện Thua của Bảo (khi đã nuốt hết 144 ô)
+                if quan_ly_bong_toi.check_lose_condition() and len(quan_ly_bong_toi.darkened_cells) >= map.ROWS * map.COLLUMS:
+                    print("--- GAME OVER: Ban do da bi bong toi nuot sach! ---")
+                    trang_thai = "MENU" # Tạm thời quay về Menu (lát nữa nối với màn hình Lose của Tony)
+
+        # VẼ BẢN ĐỒ CỦA PHÚT
         map.draw_map(screen, ban_do_game, hinh_anh_map)
         
-        # GIỮ NGUYÊN ĐỒ HỌA BÓNG TỐI CHE LẤP CỦA ANH EM MÌNH
+        # VẼ ĐỒ HỌA BÓNG TỐI CHE LẤP CỦA BẢO (cell_x là cột, cell_y là hàng)
         for cell_x, cell_y in quan_ly_bong_toi.darkened_cells:
-            toa_do_x = cell_x * 48
-            toa_do_y = cell_y * 48
+            toa_do_x = cell_x * map.TILE
+            toa_do_y = cell_y * map.TILE
             
-            mang_den = pygame.Surface((48, 48))
+            mang_den = pygame.Surface((map.TILE, map.TILE))
             mang_den.set_alpha(200) 
             mang_den.fill((0, 0, 0)) 
             screen.blit(mang_den, (toa_do_x, toa_do_y))

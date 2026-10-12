@@ -3,7 +3,7 @@ class DarknessManager:
         self.cols = cols
         self.rows = rows
         self.path_queue = [] 
-        self.current_tick_rate = 6.0 # 6 giây lan 1 ô để dễ test
+        self.current_tick_rate = 0.2 # 6 giây lan 1 ô để dễ test
         self.timer = 0.0
         self.darkened_cells = set() 
         
@@ -67,6 +67,7 @@ class DarknessManager:
         """Được gọi khi người chơi xây thành công công trình chiến thắng (The Stone)"""
         # Xóa sạch đường đi còn lại để đóng băng hoàn toàn bóng tối
         self.path_queue.clear()
+        self.darkened_cells.clear()
 # --- PHẦN TEST ĐỘC LẬP
 if __name__ == "__main__":
     import time
