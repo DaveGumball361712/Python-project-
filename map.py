@@ -1,14 +1,19 @@
 import pygame as py
 import random as r
+from menu import Button
+from economy import EconomyManager
 
-ROWS=12 #Hang
-COLLUMS=12 #Cot
-TILE=48 #Kich thuoc 1 o
-WIDTH=COLLUMS*TILE #Chieu dai ban do
-HEIGHT=ROWS*TILE #Chieu rong
-LOGO_CELLS=[(5,5),(5,6),(6,5),(6,6)] #O dat logo
+ROWS=12
+COLLUMS=12
+TILE=48
 
-IMAGE_DATA={       #Chuyen doi hinh anh thanh du lieu
+MAP_WIDTH=COLLUMS*TILE
+UI_WIDTH = 250 
+WIDTH = MAP_WIDTH + UI_WIDTH
+HEIGHT=ROWS*TILE
+LOGO_CELLS=[(5,5),(5,6),(6,5),(6,6)]
+
+IMAGE_DATA={      #Chuyen doi hinh anh thanh du lieu
     "forest":"forest","forest2":"forest2","forest3":"forest3","forest4":"forest4",
     "fields":"fields",
     "rocks":"rocks","rocks2":"rocks2","rocks3":"rocks3",
@@ -66,9 +71,18 @@ BUILD_PRIORITY = [    #Thu tu uu tien xay dung
 
 def load_images():     #Ham load hinh anh
     def load(name):    #Ham nap ten anh
-        img=py.image.load("images/"+name).convert_alpha() #img se load anh dua vao duong dan cua file images/tencuaanh
-        return py.transform.scale(img,(TILE,TILE))      #hien ra hinh anh theo ti le cua bien SCALE 
+        img=py.image.load("images/"+name).convert_alpha()
+        return py.transform.scale(img,(TILE,TILE))     
+
+    def load_icon(name):
+        img = py.image.load("images/" + name).convert_alpha()
+        return py.transform.scale(img, (25, 25))
+    
     return {
+        "icon_wood": load_icon("icon_wood.png"),
+        "icon_stone": load_icon("icon_stone.png"),
+        "icon_magic": load_icon("icon_magic.png"),
+        "icon_tech": load_icon("icon_tech.png"),
         "forest":load("forest.png"),
         "forest2":load("forest2.png"),
         "forest3":load("forest3.png"),
@@ -97,6 +111,7 @@ def load_images():     #Ham load hinh anh
         "magical_village2":load("magical_village2.png"),
     }
 
+# Giữ nguyên thuật toán tạo hồ nước mới nhất của Phút
 def grow_blob(occupied, size):
     empties = [(row,col) for row in range(ROWS) for col in range(COLLUMS) if (row,col) not in occupied]
     if not empties:
@@ -104,7 +119,7 @@ def grow_blob(occupied, size):
     seed = r.choice(empties)
     blob = [seed]; occupied.add(seed); frontier = [seed]
     while len(blob) < size and frontier:
-        cell = r.choice(frontier)                      
+        cell = r.choice(frontier)                     
         neighbors = [(cell[0]+dr,cell[1]+dc) for dr,dc in [(-1,0),(1,0),(0,-1),(0,1)]]
         neighbors = [(nr,nc) for (nr,nc) in neighbors
                 if 0<=nr<ROWS and 0<=nc<COLLUMS and (nr,nc) not in occupied]
@@ -112,16 +127,16 @@ def grow_blob(occupied, size):
             next = r.choice(neighbors)                       
             blob.append(next); occupied.add(next); frontier.append(next)
         else:
-            frontier.remove(cell)                    
+            frontier.remove(cell)                     
     return blob
 
-def generate_map():  #ham tao map
-    lr,lc=r.choice(LOGO_CELLS)  #bien chon hang va cot cua logo 
-    n_forest=r.randint(37,40)   #bien chon so forest tren ban do
-    n_rocks=r.randint(14,15)    #bien chon so rocks tren ban do
-    n_water=r.randint(27,33)    #bien chon so water tren ban do
-    n_mushroom=4                #bien chon so mushroom tren ban do
-    n_fields=144-1-n_forest-n_rocks-n_water-n_mushroom     #tinh cac o fields bang cach lay 144 tru so cac o con lai
+def generate_map():  #ham tao map co ho nuoc cua Phut
+    lr,lc=r.choice(LOGO_CELLS)  
+    n_forest=r.randint(37,40)   
+    n_rocks=r.randint(14,15)    
+    n_water=r.randint(27,33)    
+    n_mushroom=4                
+    n_fields=144-1-n_forest-n_rocks-n_water-n_mushroom     
     occupied = {(lr,lc)}                     
     water = []; remaining = n_water
     while remaining > 0:
@@ -132,7 +147,7 @@ def generate_map():  #ham tao map
         water += blob; remaining -= len(blob)
     water = set(water)
     bag=(["forest"]*n_forest+["rocks"]*n_rocks+["fields"]*n_fields+["mushroom"]*n_mushroom)
-    r.shuffle(bag)              #sau do random toan bo so o trong bag de chung xuat hien ngau nhien
+    r.shuffle(bag)              
     game_map = []; i = 0
     for row in range(ROWS):
         hang = []
@@ -144,130 +159,112 @@ def generate_map():  #ham tao map
         game_map.append(hang)
     return game_map
 
-
 def draw_map(screen, game_map, images):    #ham ve map
     for row in range(ROWS):                
         for col in range(COLLUMS):
-            tile=game_map[row][col]   #game_map chua hang va cot
-            screen.blit(images[IMAGE_DATA[tile["type"]]],(col*TILE,row*TILE))    #tai hang va cot dang xet, in hinh anh trung voi type da khai bao
-            b=tile["building"]    #ham tro den "building" trong tile
-            if b is not None:    #neu b khac None thi se gan hinh anh cua building ghi de len type trung voi BUILDING_IMAGE_DATA
+            tile=game_map[row][col]   
+            screen.blit(images[IMAGE_DATA[tile["type"]]],(col*TILE,row*TILE))    
+            b=tile["building"]    
+            if b is not None:    
                 img=BUILDING_IMAGE_DATA.get(b)
                 if img is not None:      
-                    screen.blit(images[img],(col*TILE,row*TILE))    #ve lop cong trinh
+                    screen.blit(images[img],(col*TILE,row*TILE))    
 
 def neighbor_tile(game_map,row,col,diagonal=True):     #ham kiem tra o lan can
-    direction=[(-1,0),(1,0),(0,1),(0,-1)]              #cac huong lan can khong tinh duong cheo:tren,duoi,phai,trai
+    direction=[(-1,0),(1,0),(0,1),(0,-1)]              
     if diagonal:
-        direction+=[(1,1),(-1,-1),(1,-1),(-1,1)]       #neu tinh duong cheo thi them cac huong: duoi phai,tren trai,duoi trai, tren phai
-    result=[]                                   
-    for dr,dc in direction:                            #bien dr,dc chi huong dang xet
-        nr,nc=row+dr,col+dc                            #nr,nc la cac o lan can
-        if 0<=nr<ROWS and 0<=nc<COLLUMS:               #ham dieu kien de nr,nc khong vuot khoi map
-            result.append(game_map[nr][nc])            #sau do them cac o lan can vao result trong game_map
+        direction+=[(1,1),(-1,-1),(1,-1),(-1,1)]       
+    result=[]                                          
+    for dr,dc in direction:                            
+        nr,nc=row+dr,col+dc                            
+        if 0<=nr<ROWS and 0<=nc<COLLUMS:               
+            result.append(game_map[nr][nc])            
     return result
 
 def count_neighbor_tile(game_map,row,col,diagonal=True):        #ham dem cac o lan can
     count={}
-    for on in neighbor_tile(game_map,row,col,diagonal):         #xet cac o lan can dua vao ket qua của neighbor_tile
-        name=on["type"].rstrip("0123456789")                    #kiem tra type cua tile do va loai bo so (vd:forest2-->forest)
-        count[name]=count.get(name,0)+1                         #sau do dem o nay xuat hien may lan trong o lan can, neu chua xuat hien lan nao thi mac dinh là 0 sau do +1
+    for on in neighbor_tile(game_map,row,col,diagonal):         
+        name=on["type"].rstrip("0123456789")                    
+        count[name]=count.get(name,0)+1                         
     return count
 
 def building_exists(game_map, name):                  #ham kiem tra building da ton tai chua
     for row in game_map:
         for tile in row:
-            if tile["building"] is not None and tile["building"].rstrip("0123456789")==name:    #neu building khac none va da ton tai tren tile dang xet thi return True
+            if tile["building"] is not None and tile["building"].rstrip("0123456789")==name:    
                 return True
     return False          
 
 def placement(game_map,row,col,name):           #ham kiem tra dieu kien xay
-    on=game_map[row][col]                       #xet hang,cot tren game_map
-    rule=BUILDING_RULES[name]                   #xet luat tren list BUILDING_RULES
-    if name in ONE_TIME_BUILDING and building_exists(game_map,name):    #Kiem tra xem tren tile co phai la o xay 1 lan va da ton tai chua
-        return False        #neu thoa man thi return false
+    on=game_map[row][col]                       
+    rule=BUILDING_RULES[name]                   
+    if name in ONE_TIME_BUILDING and building_exists(game_map,name):    
+        return False        
     diagonal=rule.get("diagonal",True)     
-    if on["type"]not in rule["on"]:    #neu type khong thoa man dieu kien on cua BUILDING RULE thi return fakse
+    if on["type"]not in rule["on"]:    
         return False
-    if on["building"] is not None or on["darkness"]:        #neu tile do da duoc xay dung hoac da dinh darkness thi return false
+    if on["building"] is not None or on["darkness"]:        
         return(False)
-    count=count_neighbor_tile(game_map,row,col,diagonal)    #dem cac loai o lan can cua tile dang xet
-    for type, need in rule["next_to"].items():              #vong lap for voi cac o co dieu kien next_to
-        if count.get(type,0)<need:                          #neu tile dang xet khong du cac o lan can thi false
+    count=count_neighbor_tile(game_map,row,col,diagonal)    
+    for type, need in rule["next_to"].items():              
+        if count.get(type,0)<need:                          
             return False
     needs=rule.get("needs",[])                              
-    if needs:                                               #xet cac tile co dieu kien needs
+    if needs:                                               
         has=0   
-        for on in neighbor_tile(game_map,row,col,diagonal=False):     #kiem tra cac tile lan can cua tile dang xet
-            if on["building"] is not None and on["building"].rstrip("0123456789") in needs:     #neu on thoa dieu kien khac none va on dung voi needs thi bien has+1
+        for on in neighbor_tile(game_map,row,col,diagonal=False):     
+            if on["building"] is not None and on["building"].rstrip("0123456789") in needs:     
                 has+=1
         if has<1:
-            return False     #neu khong du thi return false
+            return False     
     return True
 
 def building_check(game_map):       #ham de kiem tra so luong cong trinh phai co trong 1 map duoc tao
     for row in range(ROWS):
         for col in range(COLLUMS):
-            if placement(game_map, row, col, "treetop_village"):      #neu trong 1 map co it nhat 1 tile thoa dieu kien dat treetop_village thi return true 
+            if placement(game_map, row, col, "treetop_village"):      
                 return True
-    return False    #neu khong thi false va lap lai cho den khi het map
+    return False    
 
 def building_for_tile(game_map, row, col):              #ham xac dinh cong trinh duoc xay tren 1 tile
-    for name in BUILD_PRIORITY:                         #muc do uu tien lay tu list BUILD_PRIORITY
-        if placement(game_map, row, col, name):         #xet xem tile dang xet co thoa dieu kien placement khong, xet tu tren xuong duoi
-            return name                                 #neu thoa man thi return name
+    for name in BUILD_PRIORITY:                         
+        if placement(game_map, row, col, name):         
+            return name                                 
     return None                                         
 
-def generate_map_new():                                 #sau khi da hoan thanh buiding_check thi luc nay ta se tao moi map lien tuc cho den khi co 1 map thoa man dieu kien building_check
+def generate_map_new():                                 
     for _ in range(1000):                
         game_map = generate_map()
         if building_check(game_map):
-            return game_map               
+            return game_map                
     return game_map            
 
 def build(game_map, row, col, name):                   #ham xay cong trinh
-    if not placement(game_map, row, col, name):        #kiem tra xem name nay xay duoc gi trong placement
-        return False                                   #neu khong du dieu kien thi return false
-    tile = game_map[row][col]                          #neu du dieu kien thi tile tham chieu toi game_map theo hang cot
-    tile["building"] = name                            #sau do nhap cac chi so mac dinh vao dict theo ten cong trinh
+    if not placement(game_map, row, col, name):        
+        return False                                   
+    tile = game_map[row][col]                          
+    tile["building"] = name                            
     tile["level"] = 1
     return True
 
-def up(game_map, row, col):                            #ham nang cap cong trinh
-    tile = game_map[row][col]                          #xet tile tren game_map theo hang cot
-    if tile["darkness"]:                               #neu o da dinh darkness thi khong the nang cap
+# Hàm up đã tích hợp sẵn eco.try_buy của Đạt & Tony
+def up(game_map, row, col, eco):                            #ham nang cap cong trinh
+    tile = game_map[row][col]                          
+    if tile["darkness"]:                               
         return
-    if tile["building"] is not None:                   #neu da co building thi moi nang cap duoc
-        upgrade = UPGRADE.get(tile["building"])        #sau do ta se nang cap cong trinh dua vao ten trong UPGRADE
-        if upgrade is not None:                        #neu tile dang xet co du lieu trong upgrade
-            tile["building"] = upgrade                 #thi se gan du lieu vao cho upgrade
-            tile["level"] += 1                         #moi 1 lan nang cap thi level them 1
+    if tile["building"] is not None:                   
+        upgrade = UPGRADE.get(tile["building"])        
+        if upgrade is not None:                        
+            if eco.try_buy(upgrade):
+                tile["building"] = upgrade                 
+                tile["level"] += 1                         
         return
-    name = building_for_tile(game_map, row, col)       #neu o trong thi thu xay dung
-    if name is not None:                               #neu tile dang xet co the xay duoc
-        build(game_map, row, col, name)                #sau do bat dau xay dung cong trinh moi
+    name = building_for_tile(game_map, row, col)       
+    if name is not None:   
+        if eco.try_buy(name):                          
+            build(game_map, row, col, name)                
         return
-    upgrade = UPGRADE.get(tile["type"])                #neu khong phai o trong(vd:forest)
-    if upgrade is not None:                            #thi se nang cap dia hinh(vd forest-->forest2)
-        tile["type"] = upgrade
-
-def run_game(screen):                                  #ham de chay game
-    images=load_images()                        
-    game_map=generate_map_new()
-    while True:                                        #while true de game chay lien tuc
-        for event in py.event.get():                   #bat du kien trong game 
-            if event.type==py.QUIT:                    #neu == voi quit thi se tat game
-                return "QUIT"
-            if event.type==py.MOUSEBUTTONDOWN:         #ham bat click chuot trai xem dang click tren hang nao cot nao
-                col=event.pos[0]//TILE                 #xet xem chuot dang o cot nao bang cach chia cho TILE(48) (VD: 200/48=4,16 --> dang o cot 4)
-                row=event.pos[1]//TILE                 #tuong tu voi hang
-                if 0<=row<ROWS and 0<=col<COLLUMS:     #neu nhu hang va cot o trong ban do, thi se thu dung ham up xem co nang cap duoc hay khong
-                    up(game_map,row,col)
-        draw_map(screen, game_map,images)              #sau do ve ban do
-        py.display.flip()
-
-if __name__=="__main__":
-    py.init()
-    screen=py.display.set_mode((WIDTH,HEIGHT))
-    run_game(screen)
-    py.quit()
+    upgrade = UPGRADE.get(tile["type"])                
+    if upgrade is not None:   
+        if eco.try_buy(upgrade):                         
+            tile["type"] = upgrade

@@ -1,11 +1,8 @@
 import pygame as p
 
-WIDTH = 576
-HEIGHT = 576
-
 # THIẾT LẬP BUTTON
 class Button(p.sprite.Sprite):
-    def __init__(self, x, y, width, height, text, action = None, corner_radius = 15, border_width=5):
+    def __init__(self, x, y, width, height, text, action = None, corner_radius = 15, border_width=3):
         super().__init__()
 
         # Khởi tạo biến có thuộc tính đối tượng
@@ -16,7 +13,7 @@ class Button(p.sprite.Sprite):
         self.border_width = border_width
         self.corner_radius = corner_radius
         # Màu của Button
-        self.border_color = (140, 107, 83)
+        self.border_color = (170, 155, 140)
         self.bg_color = (204,201,195)
         self.hover_color = (235, 233, 228)
         self.is_hovered = False
@@ -28,8 +25,8 @@ class Button(p.sprite.Sprite):
     # Function tạo Button
     def _render_Button(self):
         current_bg = self.hover_color if self.is_hovered else self.bg_color
-        p.draw.rect(self.image, current_bg, self.image.get_rect(), border_radius= self.corner_radius)
-        p.draw.rect(self.image, self.border_color, self.image.get_rect(), width= self.border_width, border_radius=self.corner_radius)
+        p.draw.rect(self.image, current_bg, self.image.get_rect())
+        p.draw.rect(self.image, self.border_color, self.image.get_rect(), width= self.border_width)
 
     # Định dạng text
         font = p.font.Font(None, 36)
@@ -60,8 +57,8 @@ class MainMenu:
         # biến để theo dõi sự kiện tiếp theo của menu
         self.next_state = None
 
-        center_x = WIDTH // 2
-        center_y = HEIGHT // 2
+        center_x = self.screen.get_width() // 2
+        center_y = self.screen.get_height() // 2
         
         start_btn = Button(center_x, center_y-50, 200, 60, "Start",action=self.StartGame)
         quit_btn = Button(center_x, center_y+50, 200, 60, "Quit",action=self.QuitGame)
