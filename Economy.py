@@ -2,7 +2,7 @@ import math
 
 class EconomyManager:
     def __init__(self):
-        self.inventory = {'W': 12, 'S': 0, 'M': 0, 'T': 0}
+        self.inventory = {'W': 1000, 'S': 1000, 'M': 0, 'T': 0}
         self.base_rate = {'W': 3, 'S': 3, 'M': 1, 'T': 1}
         self.production_per_minute = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
         self.buy_count = {  
@@ -14,16 +14,25 @@ class EconomyManager:
             "forest4": {"W": (8, 4), "S": (5, 2.5)},
             "rocks2": {"W": (8,4)},
             "rocks3": {"W": (10, 5), "S": {3,1}},
-
+            "treetop_village": {"W": (15,7.5)},
+            "mushroom2": {"W": (6,3)},
+        
             "mining_village": {"W": (5, 2.5), "S" :(2,1)},
             "mining_village2": {"W: (10, 5), (5, 2.5)"},
             
             "village_group": {"W": (5, 2.5)},
-            "magical_village": {"W": (5, 0), "M": (1, 0)},
+            "village_group2": {"W": (10, 5), "S": (4,2)},
+            "magical_village_group": {"W": (5, 2.5), "M": (1, 0.5)},
+            "magical_village_group2": {"W": (14, 7), "S": (2, 1), "M": (5, 2)},
+            "tower_of_light": {"W": "25, 25", "M": {15, 10}},
         }
         self.price_group = {
             "village": "village_group",
             "port_village": "village_group",
+            "magical_village": "magical_village_group",
+            "magical_port_village:" :"magical_village_group",
+            "magical_village2": "magical_village_group2",
+            "magical_port_village2:" :"magical_village_group2",
         }
 
         self.timer = 0.0
