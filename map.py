@@ -224,23 +224,26 @@ def build(game_map, row, col, name):                   #ham xay cong trinh
     tile["level"] = 1
     return True
 
-def up(game_map, row, col):                            #ham nang cap cong trinh
+def up(game_map, row, col, eco):                            #ham nang cap cong trinh
     tile = game_map[row][col]                          #xet tile tren game_map theo hang cot
     if tile["darkness"]:                               #neu o da dinh darkness thi khong the nang cap
         return
     if tile["building"] is not None:                   #neu da co building thi moi nang cap duoc
         upgrade = UPGRADE.get(tile["building"])        #sau do ta se nang cap cong trinh dua vao ten trong UPGRADE
         if upgrade is not None:                        #neu tile dang xet co du lieu trong upgrade
-            tile["building"] = upgrade                 #thi se gan du lieu vao cho upgrade
-            tile["level"] += 1                         #moi 1 lan nang cap thi level them 1
+            if eco.try_buy(upgrade):
+                tile["building"] = upgrade                 #thi se gan du lieu vao cho upgrade
+                tile["level"] += 1                         #moi 1 lan nang cap thi level them 1
         return
     name = building_for_tile(game_map, row, col)       #neu o trong thi thu xay dung
-    if name is not None:                               #neu tile dang xet co the xay duoc
-        build(game_map, row, col, name)                #sau do bat dau xay dung cong trinh moi
+    if name is not None:    
+        if eco.try_buy(name):                           #neu tile dang xet co the xay duoc
+            build(game_map, row, col, name)                #sau do bat dau xay dung cong trinh moi
         return
     upgrade = UPGRADE.get(tile["type"])                #neu khong phai o trong(vd:forest)
-    if upgrade is not None:                            #thi se nang cap dia hinh(vd forest-->forest2)
-        tile["type"] = upgrade
+    if upgrade is not None:   
+        if eco.try_buy(upgrade):                         #thi se nang cap dia hinh(vd forest-->forest2)
+            tile["type"] = upgrade
 
 def run_game(screen):                                  #ham de chay game
     images=load_images()                        
@@ -262,10 +265,10 @@ def run_game(screen):                                  #ham de chay game
         # Icon resource
         surface.blit(icon_img, (x +5, y + 8))
         # Current amount
-        amt_text = font_main.render(str(amount), True, (50, 50, 50))
+        amt_text = font_main.render(str(int(amount)), True, (50, 50, 50))
         surface.blit(amt_text, (x + 35, y + 10))
         # Current increment
-        inc_text = font_small.render(f"+{increment}", True, (100, 100, 100))
+        inc_text = font_small.render(f"+{increment:.1f}", True, (100, 100, 100))
 
         inc_x = x + width - inc_text.get_width() - 5 
         surface.blit(inc_text, (inc_x, y + 20))
@@ -303,7 +306,7 @@ def run_game(screen):                                  #ham de chay game
                 row=event.pos[1]//TILE
                 # if hang va cot trong ban do, thi se thu dung ham up(..) -> co nang cap duoc hay khong?
                 if 0<=row<ROWS and 0<=col<COLLUMS:
-                    up(game_map,row,col)
+                    up(game_map,row,col,eco)
         
         # Create Map
         draw_map(screen, game_map,images)
@@ -312,13 +315,13 @@ def run_game(screen):                                  #ham de chay game
         screen.blit(resource_surface, (MAP_WIDTH,0))
         # Change amount and increment
         resource_text(screen, MAP_WIDTH, 0, col_width, 
-                    amount=eco.inventory['W'], increment=eco.production_per_sec['W'], icon_img=images["icon_wood"])
+                    amount=eco.inventory['W'], increment=eco.production_per_minute['W'], icon_img=images["icon_wood"])
         resource_text(screen, MAP_WIDTH + col_width, 0, col_width, 
-                    amount=eco.inventory['S'], increment=eco.production_per_sec['S'], icon_img=images["icon_stone"])
+                    amount=eco.inventory['S'], increment=eco.production_per_minute['S'], icon_img=images["icon_stone"])
         resource_text(screen, MAP_WIDTH, row_height, col_width, 
-                    amount=eco.inventory['M'], increment=eco.production_per_sec['M'], icon_img=images["icon_magic"])
+                    amount=eco.inventory['M'], increment=eco.production_per_minute['M'], icon_img=images["icon_magic"])
         resource_text(screen, MAP_WIDTH + col_width, row_height, col_width, 
-                    amount=eco.inventory['T'], increment=eco.production_per_sec['T'], icon_img=images["icon_tech"])
+                    amount=eco.inventory['T'], increment=eco.production_per_minute['T'], icon_img=images["icon_tech"])
 
         # Create Layer 2 (Information)
         screen.blit(Information_Surface, (MAP_WIDTH, 80))
@@ -329,10 +332,10 @@ def run_game(screen):                                  #ham de chay game
 
             # { (row, col): [Tên, Số lượng, Tốc độ thu thập] } 
             resource_data = {
-                (0, 0): ["Wood", int(eco.inventory['W']), eco.production_per_sec['W']],
-                (0, 1): ["Stone", int(eco.inventory['S']), eco.production_per_sec['S']],
-                (1, 0): ["Mana", int(eco.inventory['M']), eco.production_per_sec['M']],
-                (1, 1): ["Tech", int(eco.inventory['T']), eco.production_per_sec['T']]
+                (0, 0): ["Wood", int(eco.inventory['W']), eco.production_per_minute['W']],
+                (0, 1): ["Stone", int(eco.inventory['S']), eco.production_per_minute['S']],
+                (1, 0): ["Mana", int(eco.inventory['M']), eco.production_per_minute['M']],
+                (1, 1): ["Tech", int(eco.inventory['T']), eco.production_per_minute['T']]
             }
 
             # Information of resource rely on mouse_pos
@@ -344,7 +347,7 @@ def run_game(screen):                                  #ham de chay game
                 res_rate = current_res[2]
 
                 line1 = f"{res_name}: {res_amount}"
-                line2 = f"+{res_rate:.1f} per second"
+                line2 = f"+{res_rate:.1f} per minute"
 
                 text1 = font_small.render(line1, True, (60, 60, 60))
                 text2 = font_small.render(line2, True, (60, 60, 60))

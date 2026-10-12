@@ -1,13 +1,31 @@
-import time
-import subprocess
-import os
+import math
 
 class EconomyManager:
     def __init__(self):
-        self.inventory = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
+        self.inventory = {'W': 12, 'S': 0, 'M': 0, 'T': 0}
         self.base_rate = {'W': 3, 'S': 3, 'M': 1, 'T': 1}
-        self.production_per_sec = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
-        
+        self.production_per_minute = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
+        self.buy_count = {  
+            "forest2" : 0, "forest3": 0, "forest4": 0,
+        }
+        self.COST_FORMULA = {
+            "forest2": {"W": (2, 1)},
+            "forest3": {"W": (5, 2.5)},
+            "forest4": {"W": (8, 4), "S": (5, 2.5)},
+            "rocks2": {"W": (8,4)},
+            "rocks3": {"W": (10, 5), "S": {3,1}},
+
+            "mining_village": {"W": (5, 2.5), "S" :(2,1)},
+            "mining_village2": {"W: (10, 5), (5, 2.5)"},
+            
+            "village_group": {"W": (5, 2.5)},
+            "magical_village": {"W": (5, 0), "M": (1, 0)},
+        }
+        self.price_group = {
+            "village": "village_group",
+            "port_village": "village_group",
+        }
+
         self.timer = 0.0
         self.tick_rate = 1.0 
         
@@ -86,12 +104,45 @@ class EconomyManager:
                 if current_key != "E":
                     total[current_key] += self.one_production(x, y, grid)
         return total
+    
+    # 4 hàm kiểm tra điều kiện, lấy giá và cho phép xây
+    def can_afford(self, cost):
+        for res, amount in cost.items():       
+            if self.inventory[res] < amount:
+                return False
+        return True
 
+    def spend(self, cost):
+        if not self.can_afford(cost):
+            return False
+        for res, amount in cost.items():
+            self.inventory[res] -= amount
+        return True
+
+    def get_cost(self, name):
+        key = self.price_group.get(name,name)
+        if name in self.COST_FORMULA:
+            count = self.buy_count.get(key,0)
+            cost = {}
+            for res, (base, step) in self.COST_FORMULA[key].items():
+                cost[res] = math.floor(base + step * count)
+            return cost
+        print("Chưa có giá cho:", key)
+        return {}
+    
+    def try_buy(self, name):    
+        key = self.price_group.get(name,name)
+        cost = self.get_cost(key)
+        if self.spend(cost):
+            self.buy_count[key] = self.buy_count.get(key, 0) + 1 
+            return True
+        return False
+    
     # Hàm được gọi liên tục để tính toán thời gian thực
     def update(self, dt, grid):
         self.timer += dt
         if self.timer >= self.tick_rate:
             self.timer -= self.tick_rate
-            self.production_per_sec = self.total_production(grid)
-            for res in self.production_per_sec:
-                self.inventory[res] += self.production_per_sec[res]
+            self.production_per_minute = self.total_production(grid)
+            for res in self.production_per_minute:
+                self.inventory[res] += self.production_per_minute[res]/60
