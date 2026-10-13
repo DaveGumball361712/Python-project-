@@ -246,12 +246,12 @@ def up(game_map, row, col):                            #ham nang cap cong trinh
 def run_game(screen):                                  #ham de chay game
     images=load_images()                        
     game_map=generate_map_new()
-
     eco = EconomyManager()
     clock = py.time.Clock()
 
     is_playing = True
     is_paused = False
+    time_multiplier = 1
 
     def action_quit():
         nonlocal is_playing
@@ -263,13 +263,27 @@ def run_game(screen):                                  #ham de chay game
         # Gọi UI để nó đổi giao diện nút bấm
         ui_panel.toggle_pause_ui(is_paused)
 
+    # HÀM XỬ LÝ KHI BẤM NÚT SPEED
+    def action_speed():
+        nonlocal time_multiplier
+        # Xoay vòng tốc độ: 1 -> 2 -> 4 -> quay lại 1
+        if time_multiplier == 1:
+            time_multiplier = 2
+        elif time_multiplier == 2:
+            time_multiplier = 4
+        else:
+            time_multiplier = 1
+        
+        ui_panel.toggle_speed_ui(time_multiplier)
+
     #create UI
-    ui_panel = SidePanel(MAP_WIDTH, UI_WIDTH, HEIGHT, action_quit, action_pause)
+    ui_panel = SidePanel(MAP_WIDTH, UI_WIDTH, HEIGHT, action_quit, action_pause, action_speed)
 
     while is_playing:
         dt = clock.tick(60) / 1000.0 
         if not is_paused:
-            eco.update(dt, game_map)
+            game_dt = dt * time_multiplier
+            eco.update(game_dt, game_map)
 
         mouse_x, mouse_y = py.mouse.get_pos()
 

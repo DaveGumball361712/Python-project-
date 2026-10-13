@@ -2,7 +2,7 @@ import pygame as py
 from menu import Button
 
 class SidePanel:
-    def __init__(self, map_width, ui_width, height, action_quit, action_pause):
+    def __init__(self, map_width, ui_width, height, action_quit, action_pause, action_speed):
         self.map_width = map_width
         self.ui_width = ui_width
         self.height = height
@@ -34,6 +34,14 @@ class SidePanel:
         # Nút Pause 
         self.btn_pause = Button(x=self.map_width + 180, y=556, width=30, height=30, text="II", action=action_pause)
 
+        # NÚT SPEED
+        self.btn_speed = Button(x=self.map_width + 140, y=556, width=30, height=30, text="1x", action=action_speed)
+
+    # HÀM CẬP NHẬT GIAO DIỆN NÚT SPEED
+    def toggle_speed_ui(self, current_multiplier):
+        self.btn_speed.text = f"{current_multiplier}x"
+        self.btn_speed._render_Button()
+
     # Hàm thay đổi giao diện nút Pause khi bấm
     def toggle_pause_ui(self, is_paused):
         # Nếu đang Pause thì hiện nút Play ( > ), ngược lại hiện Pause ( || )
@@ -53,6 +61,7 @@ class SidePanel:
     def handle_event(self, event):
         self.btn_quit.handle_event(event)
         self.btn_pause.handle_event(event)
+        self.btn_speed.handle_event(event)
 
     # Hàm để vẽ toàn bộ UI ra màn hình
     def draw(self, screen, mouse_x, mouse_y, eco, images, is_paused):
@@ -105,3 +114,6 @@ class SidePanel:
 
         self.btn_pause.update()
         screen.blit(self.btn_pause.image, self.btn_pause.rect)
+
+        self.btn_speed.update()
+        screen.blit(self.btn_speed.image, self.btn_speed.rect)
