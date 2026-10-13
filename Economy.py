@@ -4,22 +4,42 @@ class EconomyManager:
     def __init__(self):
         self.inventory = {'W': 12, 'S': 0, 'M': 0, 'T': 0}
         self.base_rate = {'W': 3, 'S': 3, 'M': 1, 'T': 1}
-        self.production_per_minute = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
+        self.production_per_sec = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
         self.buy_count = {  
             "forest2" : 0, "forest3": 0, "forest4": 0,
         }
         self.COST_FORMULA = {
+            # Địa hình
             "forest2": {"W": (2, 1)},
             "forest3": {"W": (5, 2.5)},
             "forest4": {"W": (8, 4), "S": (5, 2.5)},
-            "rocks2": {"W": (8,4)},
-            "rocks3": {"W": (10, 5), "S": {3,1}},
+            "rocks2": {"W": (8, 4)},
+            "rocks3": {"W": (10, 5), "S": (3, 1)},
+            "mushroom2": {"W": (15, 5), "S": (15, 5)},
 
-            "mining_village": {"W": (5, 2.5), "S" :(2,1)},
-            "mining_village2": {"W: (10, 5), (5, 2.5)"},
-            
+            # Nhóm làng cơ bản (village & port_village dùng chung nhóm giá)
             "village_group": {"W": (5, 2.5)},
-            "magical_village": {"W": (5, 0), "M": (1, 0)},
+            "village2": {"W": (15, 5), "S": (5, 2.5)},
+            "port_village2": {"W": (15, 5), "S": (10, 5)},
+
+            # Làng khai thác Đá (Cấp 1 chỉ tốn Gỗ để mở khóa Đá)
+            "mining_village": {"W": (5, 2.5)},
+            "mining_village2": {"W": (10, 5), "S": (5, 2.5)},
+
+            # Làng trên cây
+            "treetop_village": {"W": (15, 5)},
+            "treetop_village2": {"W": (30, 10), "S": (15, 5)},
+
+            # Làng phép thuật (Cấp 1 chỉ tốn Gỗ + Đá để mở khóa Mana)
+            "magical_village": {"W": (20, 5), "S": (10, 2.5)},
+            "magical_village2": {"W": (40, 10), "S": (20, 5), "M": (10, 2.5)},
+
+            "magical_port_village": {"W": (25, 5), "S": (15, 5)},
+            "magical_port_village2": {"W": (50, 10), "S": (30, 5), "M": (15, 5)},
+
+            # Tháp ánh sáng
+            "tower_of_light": {"W": (50, 0), "S": (50, 0), "M": (20, 0)},
+            "tower_of_light2": {"W": (100, 0), "S": (100, 0), "M": (50, 0), "T": (20, 0)},
         }
         self.price_group = {
             "village": "village_group",
@@ -120,9 +140,9 @@ class EconomyManager:
         return True
 
     def get_cost(self, name):
-        key = self.price_group.get(name,name)
-        if name in self.COST_FORMULA:
-            count = self.buy_count.get(key,0)
+        key = self.price_group.get(name, name)
+        if key in self.COST_FORMULA:  # Kiểm tra theo key thay vì name
+            count = self.buy_count.get(key, 0)
             cost = {}
             for res, (base, step) in self.COST_FORMULA[key].items():
                 cost[res] = math.floor(base + step * count)
@@ -131,18 +151,27 @@ class EconomyManager:
         return {}
     
     def try_buy(self, name):    
-        key = self.price_group.get(name,name)
-        cost = self.get_cost(key)
+        key = self.price_group.get(name, name)
+        cost = self.get_cost(name)
+        if not cost:  # Chặn không cho xây nếu chưa khai báo giá
+            return False
         if self.spend(cost):
             self.buy_count[key] = self.buy_count.get(key, 0) + 1 
             return True
         return False
     
     # Hàm được gọi liên tục để tính toán thời gian thực
-    def update(self, dt, grid):
-        self.timer += dt
-        if self.timer >= self.tick_rate:
-            self.timer -= self.tick_rate
-            self.production_per_minute = self.total_production(grid)
-            for res in self.production_per_minute:
-                self.inventory[res] += self.production_per_minute[res]/60
+    def update(self, dt, game_map):
+        # 1. Reset về 0 ở ĐẦU hàm trước khi quét map
+        self.production_per_sec = {'W': 0.0, 'S': 0.0, 'M': 0.0, 'T': 0.0}
+        
+        # 2. Quét toàn bộ map để tính tổng sản lượng hiện tại/giây
+        for r in range(len(game_map)):
+            for c in range(len(game_map[0])):
+                tile = game_map[r][c]
+                res_type = self.get_res_type(tile)
+                if res_type != 'E':
+                    prod = self.one_production(r, c, game_map)
+                    self.production_per_sec[res_type] += prod
+                    # Cộng tài nguyên thực tế theo thời gian trôi qua (dt)
+                    self.inventory[res_type] += prod * dt

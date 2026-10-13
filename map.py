@@ -280,14 +280,16 @@ def run_game(screen):                                  #ham de chay game
         ui_panel.toggle_speed_ui(time_multiplier)
 
     #create UI
-    ui_panel = SidePanel(MAP_WIDTH, UI_WIDTH, HEIGHT, action_quit, action_pause, action_speed)
+    ui_panel = SidePanel(MAP_WIDTH, UI_WIDTH, HEIGHT, action_quit, action_pause, action_speed, TILE, ROWS, COLLUMS)
 
     while is_playing:
         dt = clock.tick(60) / 1000.0 
+
         if not is_paused:
             game_dt = dt * time_multiplier
             eco.update(game_dt, game_map)
 
+        # Lấy tọa độ chuột
         mouse_x, mouse_y = py.mouse.get_pos()
 
         # Event listener
@@ -298,7 +300,7 @@ def run_game(screen):                                  #ham de chay game
             ui_panel.handle_event(event)
 
             # ham bat click chuot trai xem dang click tren hang nao cot nao
-            if event.type==py.MOUSEBUTTONDOWN:
+            if event.type==py.MOUSEBUTTONDOWN and event.button == 1:
                 # xet xem chuot dang o cot nao bang cach chia cho TILE(48) (VD: 200/48=4,16 --> dang o cot 4)
                 col=event.pos[0]//TILE
                 row=event.pos[1]//TILE
@@ -306,13 +308,13 @@ def run_game(screen):                                  #ham de chay game
                 if 0<=row<ROWS and 0<=col<COLLUMS:
                     # Khóa không cho người chơi nâng cấp/xây nhà nếu đang Pause
                     if not is_paused: 
-                        up(game_map, row, col)
+                        up(game_map, row, col, eco)
         
         # Create Map
         draw_map(screen, game_map,images)
 
         # Create menu
-        ui_panel.draw(screen, mouse_x, mouse_y, eco, images, is_paused)
+        ui_panel.draw(screen, mouse_x, mouse_y, eco, images, is_paused, game_map)
 
         py.display.flip()
     return "QUIT"
