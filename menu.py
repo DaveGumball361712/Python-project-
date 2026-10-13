@@ -88,7 +88,6 @@ class MainMenu:
             p.display.flip()
 
 
-# --- CHẠY THỬ CỤC BỘ ---
 if __name__ == "__main__":
     import sys
 
