@@ -251,16 +251,26 @@ def run_game(screen):                                  #ham de chay game
     clock = py.time.Clock()
 
     is_playing = True
+    is_paused = False
+
     def action_quit():
         nonlocal is_playing
         is_playing = False
 
+    def action_pause():
+        nonlocal is_paused
+        is_paused = not is_paused
+        # Gọi UI để nó đổi giao diện nút bấm
+        ui_panel.toggle_pause_ui(is_paused)
+
     #create UI
-    ui_panel = SidePanel(MAP_WIDTH, UI_WIDTH, HEIGHT, action_quit)
+    ui_panel = SidePanel(MAP_WIDTH, UI_WIDTH, HEIGHT, action_quit, action_pause)
 
     while is_playing:
         dt = clock.tick(60) / 1000.0 
-        eco.update(dt, game_map)
+        if not is_paused:
+            eco.update(dt, game_map)
+
         mouse_x, mouse_y = py.mouse.get_pos()
 
         # Event listener
@@ -277,13 +287,15 @@ def run_game(screen):                                  #ham de chay game
                 row=event.pos[1]//TILE
                 # if hang va cot trong ban do, thi se thu dung ham up(..) -> co nang cap duoc hay khong?
                 if 0<=row<ROWS and 0<=col<COLLUMS:
-                    up(game_map,row,col)
+                    # Khóa không cho người chơi nâng cấp/xây nhà nếu đang Pause
+                    if not is_paused: 
+                        up(game_map, row, col)
         
         # Create Map
         draw_map(screen, game_map,images)
 
         # Create menu
-        ui_panel.draw(screen, mouse_x, mouse_y, eco, images)
+        ui_panel.draw(screen, mouse_x, mouse_y, eco, images, is_paused)
 
         py.display.flip()
     return "QUIT"

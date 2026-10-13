@@ -2,7 +2,7 @@ import pygame as py
 from menu import Button
 
 class SidePanel:
-    def __init__(self, map_width, ui_width, height, action_quit):
+    def __init__(self, map_width, ui_width, height, action_quit, action_pause):
         self.map_width = map_width
         self.ui_width = ui_width
         self.height = height
@@ -31,6 +31,15 @@ class SidePanel:
         # Khởi tạo nút Quit
         self.btn_quit = Button(x=self.map_width + 220, y=556, width=30, height=30, text="x", action=action_quit)
 
+        # Nút Pause 
+        self.btn_pause = Button(x=self.map_width + 180, y=556, width=30, height=30, text="II", action=action_pause)
+
+    # Hàm thay đổi giao diện nút Pause khi bấm
+    def toggle_pause_ui(self, is_paused):
+        # Nếu đang Pause thì hiện nút Play ( > ), ngược lại hiện Pause ( || )
+        self.btn_pause.text = "►" if is_paused else "II"
+        self.btn_pause._render_Button() # Gọi lại hàm render của class Button để cập nhật chữ
+
     # Hàm phụ hỗ trợ vẽ chữ tài nguyên 
     def _draw_resource_text(self, surface, x, y, width, amount, increment, icon_img):
         surface.blit(icon_img, (x + 5, y + 8))
@@ -43,9 +52,10 @@ class SidePanel:
     # Hàm bắt sự kiện UI
     def handle_event(self, event):
         self.btn_quit.handle_event(event)
+        self.btn_pause.handle_event(event)
 
     # Hàm để vẽ toàn bộ UI ra màn hình
-    def draw(self, screen, mouse_x, mouse_y, eco, images):
+    def draw(self, screen, mouse_x, mouse_y, eco, images, is_paused):
         # 1. Vẽ Layer 1 (Resource)
         screen.blit(self.resource_surface, (self.map_width, 0))
         
@@ -84,6 +94,14 @@ class SidePanel:
                 screen.blit(text1, (self.map_width + 15, 100))
                 screen.blit(text2, (self.map_width + 15, 130))
 
+        # Nếu game đang pause, hiển thị thêm dòng chữ thông báo bự ở giữa UI
+        if is_paused:
+            pause_text = self.font_main.render("GAME PAUSED", True, (200, 50, 50))
+            screen.blit(pause_text, (self.map_width + 50, self.height // 2))
+
         # Vẽ nút bấm
         self.btn_quit.update()
         screen.blit(self.btn_quit.image, self.btn_quit.rect)
+
+        self.btn_pause.update()
+        screen.blit(self.btn_pause.image, self.btn_pause.rect)

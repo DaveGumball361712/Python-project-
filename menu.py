@@ -29,7 +29,7 @@ class Button(p.sprite.Sprite):
         p.draw.rect(self.image, self.border_color, self.image.get_rect(), width= self.border_width)
 
     # Định dạng text
-        font = p.font.Font(None, 36)
+        font = p.font.SysFont('arial', 32)
         text_surf = font.render(self.text, True, (0,0,0))
         text_rect = text_surf.get_rect(center=(self.width//2, self.height//2))
         self.image.blit(text_surf,text_rect)
