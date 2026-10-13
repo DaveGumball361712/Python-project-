@@ -225,23 +225,26 @@ def build(game_map, row, col, name):                   #ham xay cong trinh
     tile["level"] = 1
     return True
 
-def up(game_map, row, col):                            #ham nang cap cong trinh
+def up(game_map, row, col, eco):                            #ham nang cap cong trinh
     tile = game_map[row][col]                          #xet tile tren game_map theo hang cot
     if tile["darkness"]:                               #neu o da dinh darkness thi khong the nang cap
         return
     if tile["building"] is not None:                   #neu da co building thi moi nang cap duoc
         upgrade = UPGRADE.get(tile["building"])        #sau do ta se nang cap cong trinh dua vao ten trong UPGRADE
         if upgrade is not None:                        #neu tile dang xet co du lieu trong upgrade
-            tile["building"] = upgrade                 #thi se gan du lieu vao cho upgrade
-            tile["level"] += 1                         #moi 1 lan nang cap thi level them 1
+            if eco.try_buy(upgrade):
+                tile["building"] = upgrade                 #thi se gan du lieu vao cho upgrade
+                tile["level"] += 1                         #moi 1 lan nang cap thi level them 1
         return
     name = building_for_tile(game_map, row, col)       #neu o trong thi thu xay dung
-    if name is not None:                               #neu tile dang xet co the xay duoc
-        build(game_map, row, col, name)                #sau do bat dau xay dung cong trinh moi
+    if name is not None:    
+        if eco.try_buy(name):                           #neu tile dang xet co the xay duoc
+            build(game_map, row, col, name)                #sau do bat dau xay dung cong trinh moi
         return
     upgrade = UPGRADE.get(tile["type"])                #neu khong phai o trong(vd:forest)
-    if upgrade is not None:                            #thi se nang cap dia hinh(vd forest-->forest2)
-        tile["type"] = upgrade
+    if upgrade is not None:   
+        if eco.try_buy(upgrade):                         #thi se nang cap dia hinh(vd forest-->forest2)
+            tile["type"] = upgrade
 
 def run_game(screen):                                  #ham de chay game
     images=load_images()                        
