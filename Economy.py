@@ -2,7 +2,7 @@ import math
 
 class EconomyManager:
     def __init__(self):
-        self.inventory = {'W': 1000, 'S': 1000, 'M': 0, 'T': 0}
+        self.inventory = {'W': 12, 'S': 0, 'M': 0, 'T': 0}
         self.base_rate = {'W': 3, 'S': 3, 'M': 1, 'T': 1}
         self.production_per_minute = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
         self.buy_count = {  
