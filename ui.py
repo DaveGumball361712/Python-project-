@@ -13,7 +13,7 @@ class SidePanel:
         
         # Khởi tạo Font
         self.font_small = py.font.Font(None, 24)
-        self.font_main = py.font.Font(None, 32)
+        self.font_main = py.font.Font(None, 28)
         
         # Kích thước khu vực
         self.res_height = 80
