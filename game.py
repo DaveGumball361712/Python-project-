@@ -116,7 +116,8 @@ def run_game(screen):
         # VẼ ĐỒ HỌA
         screen.fill((0, 0, 0))
         map.draw_map(screen, ban_do_game, hinh_anh_map)
-        
+
+        # VE BONG TOI
         for cell_x, cell_y in quan_ly_bong_toi.darkened_cells:
             mang_den = py.Surface((map.TILE, map.TILE))
             mang_den.set_alpha(200)
