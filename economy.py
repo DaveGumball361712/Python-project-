@@ -40,6 +40,9 @@ class EconomyManager:
             # Tháp ánh sáng
             "tower_of_light": {"W": (50, 0), "S": (50, 0), "M": (20, 0)},
             "tower_of_light2": {"W": (100, 0), "S": (100, 0), "M": (50, 0), "T": (20, 0)},
+
+            # CÔNG TRÌNH CHIẾN THẮNG
+            "the_stone": {"S": (100, 0), "M": (100, 0)},
         }
         self.price_group = {
             "village": "village_group",

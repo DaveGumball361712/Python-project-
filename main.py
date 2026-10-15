@@ -103,6 +103,11 @@ while True:
                         map.up(ban_do_game, row, col, quan_ly_kinh_te)
                         quan_ly_bong_toi.dong_bo_cap_do_thap(ban_do_game)
 
+                        # --- KIỂM TRA ĐIỀU KIỆN THẮNG ---
+                        if ban_do_game[row][col]["type"] == "the_stone":
+                            quan_ly_bong_toi.trigger_win_condition()
+                            print("You Win !")
+
         # --- VẼ LÊN MÀN HÌNH ---
         screen.fill((0, 0, 0)) # Xóa khung hình cũ
         

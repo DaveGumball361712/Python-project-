@@ -20,6 +20,7 @@ IMAGE_DATA={      #Chuyen doi hinh anh thanh du lieu
     "water":"water",
     "logo":"logo",
     "mushroom":"mushroom","mushroom2":"mushroom2",
+    "the_stone": "the_stone",
 }
 
 BUILDING_IMAGE_DATA={       #Chuyen doi hinh anh thanh du lieu cho cong trinh
@@ -57,6 +58,7 @@ UPGRADE={      #Nang cap
     "tower_of_light":"tower_of_light2",
     "magical_village":"magical_village2",
     "magical_port_village":"magical_port_village2",
+    "logo": "the_stone",
 }
 
 BUILD_PRIORITY = [    #Thu tu uu tien xay dung
@@ -109,6 +111,7 @@ def load_images():     #Ham load hinh anh
         "magical_port_village2":load("magical_port_village2.png"),
         "magical_village":load("magical_village.png"),
         "magical_village2":load("magical_village2.png"),
+        "the_stone": load("the_stone.png"),
     }
 
 # Giữ nguyên thuật toán tạo hồ nước mới nhất của Phút
