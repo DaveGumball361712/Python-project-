@@ -130,34 +130,30 @@ def run_game(screen):
             huong_dan.draw(screen, font_tutorial)
         # ----------------------------------------------------------
         
-        # VẼ BẢNG CHÚC MỪNG CHIẾN THẮNG (UI)
+      # VẼ BẢNG CHÚC MỪNG CHIẾN THẮNG (UI)
         if is_win:
-            # Làm mờ nhẹ phần bản đồ
-            mo_nen = py.Surface((map.MAP_WIDTH, map.HEIGHT))
-            mo_nen.set_alpha(150)
-            mo_nen.fill((0, 0, 0))
-            screen.blit(mo_nen, (0, 0))
-
-            # Thông số kích thước Bảng
-            bang_rong = 400
-            bang_cao = 220
-            toa_do_x = (map.MAP_WIDTH - bang_rong) // 2
-            toa_do_y = (map.HEIGHT - bang_cao) // 2
+            # Kích thước 
+            banner_height = 90
+            toa_do_y = map.HEIGHT - banner_height
             
-            # Vẽ thân bảng màu xám tối & Viền vàng bo góc
-            py.draw.rect(screen, (40, 40, 45), (toa_do_x, toa_do_y, bang_rong, bang_cao), border_radius=15)
-            py.draw.rect(screen, (255, 215, 0), (toa_do_x, toa_do_y, bang_rong, bang_cao), 5, border_radius=15)
-
-            # Vẽ chữ VICTORY
-            font_win = py.font.SysFont('arial', 60, bold=True)
-            chu_win = font_win.render("VICTORY!", True, (255, 215, 0))
-            screen.blit(chu_win, (toa_do_x + bang_rong//2 - chu_win.get_width()//2, toa_do_y + 30))
-
-            # Ghi chú thoát
-            font_btn = py.font.SysFont('arial', 18, italic=True)
-            chu_btn = font_btn.render("Nhan nut [ X ] o goc phai de ve Menu", True, (150, 150, 150))
-            screen.blit(chu_btn, (toa_do_x + bang_rong//2 - chu_btn.get_width()//2, toa_do_y + 170))
-
+            # Vẽ nền màu xám và viền màu nâu y hệt style của Phút
+            py.draw.rect(screen, (204, 201, 195), (0, toa_do_y, map.MAP_WIDTH, banner_height))
+            py.draw.line(screen, (170, 155, 140), (0, toa_do_y), (map.MAP_WIDTH, toa_do_y), 3)
+            
+            # Tạo 2 dòng chữ với kích thước khác nhau
+            font_win = py.font.SysFont('arial', 20, bold=True)
+            font_sub = py.font.SysFont('arial', 16, italic=True)
+            
+            chu_win = font_win.render("You saved the land from the darkness! Great job!", True, (40, 40, 40))
+            chu_sub = font_sub.render("Press the [X] button to return to the menu.", True, (100, 100, 100)) # Dòng phụ màu xám nhạt hơn
+            
+            # Căn giữa tọa độ X cho cả 2 dòng
+            toa_do_x_win = (map.MAP_WIDTH - chu_win.get_width()) // 2
+            toa_do_x_sub = (map.MAP_WIDTH - chu_sub.get_width()) // 2
+            
+            # Vẽ lên màn hình 
+            screen.blit(chu_win, (toa_do_x_win, toa_do_y + 20))
+            screen.blit(chu_sub, (toa_do_x_sub, toa_do_y + 55))
         py.display.flip()
         
     return ket_qua_tra_ve

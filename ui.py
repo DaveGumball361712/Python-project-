@@ -297,10 +297,7 @@ class SidePanel:
                     title = "Click to upgrade to:" if hover_info["upgrade"].get("is_upgrade") else "Next upgrade:"
                     self._draw_info_section(screen, start_x, current_y, title, hover_info["upgrade"], images)
 
-        if is_paused:
-            pause_text = self.font_main.render("GAME PAUSED", True, (200, 50, 50))
-            screen.blit(pause_text, (self.map_width + 50, self.height // 2))
-
+    
         self.btn_quit.update()
         screen.blit(self.btn_quit.image, self.btn_quit.rect)
         
