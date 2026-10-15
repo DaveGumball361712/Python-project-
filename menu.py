@@ -74,6 +74,9 @@ class MainMenu:
         running = True
 
         while running:
+           # Xoa man bi ket reset game
+            self.screen.fill((40, 40, 45))
+           
             for event in p.event.get():
                 if event.type == p.QUIT:
                     return "QUIT"
