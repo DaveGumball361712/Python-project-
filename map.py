@@ -1,14 +1,19 @@
 import pygame as py
 import random as r
+from menu import Button
+from Economy import EconomyManager
+from ui import SidePanel
 
-ROWS=12 #Hang
-COLLUMS=12 #Cot
-TILE=48 #Kich thuoc 1 o
-WIDTH=COLLUMS*TILE #Chieu dai ban do
-HEIGHT=ROWS*TILE #Chieu rong
-LOGO_CELLS=[(5,5),(5,6),(6,5),(6,6)] #O dat logo
+ROWS=12
+COLLUMS=12
+TILE=48
 
-IMAGE_DATA={       #Chuyen doi hinh anh thanh du lieu
+MAP_WIDTH=COLLUMS*TILE
+UI_WIDTH = 250 
+WIDTH = MAP_WIDTH + UI_WIDTH
+HEIGHT=ROWS*TILE
+LOGO_CELLS=[(5,5),(5,6),(6,5),(6,6)]
+IMAGE_DATA={      #Chuyen doi hinh anh thanh du lieu
     "forest":"forest","forest2":"forest2","forest3":"forest3","forest4":"forest4",
     "fields":"fields",
     "rocks":"rocks","rocks2":"rocks2","rocks3":"rocks3",
@@ -68,7 +73,16 @@ def load_images():     #Ham load hinh anh
     def load(name):    #Ham nap ten anh
         img=py.image.load("images/"+name).convert_alpha() #img se load anh dua vao duong dan cua file images/tencuaanh
         return py.transform.scale(img,(TILE,TILE))      #hien ra hinh anh theo ti le cua bien SCALE 
+
+    def load_icon(name):
+        img = py.image.load("images/" + name).convert_alpha()
+        return py.transform.scale(img, (25, 25))
+    
     return {
+        "icon_wood": load_icon("icon_wood.png"),
+        "icon_stone": load_icon("icon_stone.png"),
+        "icon_magic": load_icon("icon_magic.png"),
+        "icon_tech": load_icon("icon_tech.png"),
         "forest":load("forest.png"),
         "forest2":load("forest2.png"),
         "forest3":load("forest3.png"),
@@ -233,38 +247,99 @@ def build(game_map, row, col, name):                   #ham xay cong trinh
     tile["level"] = 1
     return True
 
-def up(game_map, row, col):                            #ham nang cap cong trinh
+def up(game_map, row, col, eco):                            #ham nang cap cong trinh
     tile = game_map[row][col]                          #xet tile tren game_map theo hang cot
     if tile["darkness"]:                               #neu o da dinh darkness thi khong the nang cap
         return
     if tile["building"] is not None:                   #neu da co building thi moi nang cap duoc
         upgrade = UPGRADE.get(tile["building"])        #sau do ta se nang cap cong trinh dua vao ten trong UPGRADE
         if upgrade is not None:                        #neu tile dang xet co du lieu trong upgrade
-            tile["building"] = upgrade                 #thi se gan du lieu vao cho upgrade
-            tile["level"] += 1                         #moi 1 lan nang cap thi level them 1
+            if eco.try_buy(upgrade):
+                tile["building"] = upgrade                 #thi se gan du lieu vao cho upgrade
+                tile["level"] += 1                         #moi 1 lan nang cap thi level them 1
         return
     name = building_for_tile(game_map, row, col)       #neu o trong thi thu xay dung
-    if name is not None:                               #neu tile dang xet co the xay duoc
-        build(game_map, row, col, name)                #sau do bat dau xay dung cong trinh moi
+    if name is not None:    
+        if eco.try_buy(name):                           #neu tile dang xet co the xay duoc
+            build(game_map, row, col, name)                #sau do bat dau xay dung cong trinh moi
         return
     upgrade = UPGRADE.get(tile["type"])                #neu khong phai o trong(vd:forest)
-    if upgrade is not None:                            #thi se nang cap dia hinh(vd forest-->forest2)
-        tile["type"] = upgrade
+    if upgrade is not None:   
+        if eco.try_buy(upgrade):                         #thi se nang cap dia hinh(vd forest-->forest2)
+            tile["type"] = upgrade
 
 def run_game(screen):                                  #ham de chay game
     images=load_images()                        
     game_map=generate_map_new()
-    while True:                                        #while true de game chay lien tuc
-        for event in py.event.get():                   #bat du kien trong game 
-            if event.type==py.QUIT:                    #neu == voi quit thi se tat game
+    eco = EconomyManager()
+    clock = py.time.Clock()
+
+    is_playing = True
+    is_paused = False
+    time_multiplier = 1
+
+    def action_quit():
+        nonlocal is_playing
+        is_playing = False
+
+    def action_pause():
+        nonlocal is_paused
+        is_paused = not is_paused
+        # Gọi UI để nó đổi giao diện nút bấm
+        ui_panel.toggle_pause_ui(is_paused)
+
+    # HÀM XỬ LÝ KHI BẤM NÚT SPEED
+    def action_speed():
+        nonlocal time_multiplier
+        # Xoay vòng tốc độ: 1 -> 2 -> 4 -> quay lại 1
+        if time_multiplier == 1:
+            time_multiplier = 2
+        elif time_multiplier == 2:
+            time_multiplier = 4
+        else:
+            time_multiplier = 1
+        
+        ui_panel.toggle_speed_ui(time_multiplier)
+
+    #create UI
+    ui_panel = SidePanel(MAP_WIDTH, UI_WIDTH, HEIGHT, action_quit, action_pause, action_speed, TILE, ROWS, COLLUMS)
+
+    while is_playing:
+        dt = clock.tick(60) / 1000.0 
+
+        if not is_paused:
+            game_dt = dt * time_multiplier
+            eco.update(game_dt, game_map)
+
+        # Lấy tọa độ chuột
+        mouse_x, mouse_y = py.mouse.get_pos()
+
+        # Event listener
+        for event in py.event.get(): 
+            if event.type==py.QUIT: 
                 return "QUIT"
-            if event.type==py.MOUSEBUTTONDOWN:         #ham bat click chuot trai xem dang click tren hang nao cot nao
-                col=event.pos[0]//TILE                 #xet xem chuot dang o cot nao bang cach chia cho TILE(48) (VD: 200/48=4,16 --> dang o cot 4)
-                row=event.pos[1]//TILE                 #tuong tu voi hang
-                if 0<=row<ROWS and 0<=col<COLLUMS:     #neu nhu hang va cot o trong ban do, thi se thu dung ham up xem co nang cap duoc hay khong
-                    up(game_map,row,col)
-        draw_map(screen, game_map,images)              #sau do ve ban do
+            
+            ui_panel.handle_event(event)
+
+            # ham bat click chuot trai xem dang click tren hang nao cot nao
+            if event.type==py.MOUSEBUTTONDOWN and event.button == 1:
+                # xet xem chuot dang o cot nao bang cach chia cho TILE(48) (VD: 200/48=4,16 --> dang o cot 4)
+                col=event.pos[0]//TILE
+                row=event.pos[1]//TILE
+                # if hang va cot trong ban do, thi se thu dung ham up(..) -> co nang cap duoc hay khong?
+                if 0<=row<ROWS and 0<=col<COLLUMS:
+                    # Khóa không cho người chơi nâng cấp/xây nhà nếu đang Pause
+                    if not is_paused: 
+                        up(game_map, row, col, eco)
+        
+        # Create Map
+        draw_map(screen, game_map,images)
+
+        # Create menu
+        ui_panel.draw(screen, mouse_x, mouse_y, eco, images, is_paused, game_map)
+
         py.display.flip()
+    return "QUIT"
 
 if __name__=="__main__":
     py.init()
