@@ -13,6 +13,12 @@ def run_game(screen):
     quan_ly_kinh_te = EconomyManager()
     quan_ly_bong_toi = darkness.DarknessManager(map.COLLUMS, map.ROWS)
     
+    # CODE TUTORIAL Khởi tạo
+    from tutorial import Tutorial
+    font_tutorial = py.font.SysFont('arial', 20, bold=True)
+    huong_dan = Tutorial(ban_do_game, map.ROWS, map.COLLUMS, map.TILE, lambda r, c: False)
+    # ------------------------------------------------
+    
     is_paused = False
     time_multiplier = 1
     is_win = False
@@ -63,6 +69,11 @@ def run_game(screen):
                     ban_do_game[r_dark][c_dark]["darkness"] = True
                 quan_ly_bong_toi.dong_bo_cap_do_thap(ban_do_game)
                 
+            # CODE TUTORIAL Cập nhật nháy
+            if huong_dan.active:
+                huong_dan.update(dt)
+            # ----------------------------------------------------
+                
         # Kiểm tra thua
         if quan_ly_bong_toi.check_lose_condition() and len(quan_ly_bong_toi.darkened_cells) >= map.ROWS * map.COLLUMS:
             print("--- GAME OVER: Ban do da bi nuot sach! ---")
@@ -81,8 +92,19 @@ def run_game(screen):
                 row = event.pos[1] // map.TILE
                 if 0 <= row < map.ROWS and 0 <= col < map.COLLUMS:
                     if not is_paused:
+                        # CODE TUTORIAL Chặn click sai
+                        if huong_dan.active and not huong_dan.allowed(row, col):
+                            continue # Bấm sai ô hướng dẫn thì không cho xây
+                        nha_cu = ban_do_game[row][col]["type"] # Nhớ nhà cũ
+                        # -------------------------------------------------------
+                        
                         map.up(ban_do_game, row, col, quan_ly_kinh_te)
                         quan_ly_bong_toi.dong_bo_cap_do_thap(ban_do_game)
+                        
+                        # CODE TUTORIAL Báo cáo kết quả
+                        if huong_dan.active:
+                            huong_dan.on_action(row, col, nha_cu != ban_do_game[row][col]["type"])
+                        # --------------------------------------------------------
                         
                         # Kiểm tra thắng (Nâng cấp The Stone)
                         if ban_do_game[row][col]["type"] == "the_stone":
@@ -102,6 +124,11 @@ def run_game(screen):
             screen.blit(mang_den, (cell_x * map.TILE, cell_y * map.TILE))
             
         ui_panel.draw(screen, mouse_x, mouse_y, quan_ly_kinh_te, hinh_anh_map, is_paused, ban_do_game)
+        
+        # CODE TUTORIAL Vẽ bảng hướng dẫn
+        if huong_dan.active:
+            huong_dan.draw(screen, font_tutorial)
+        # ----------------------------------------------------------
         
         # VẼ BẢNG CHÚC MỪNG CHIẾN THẮNG (UI)
         if is_win:
