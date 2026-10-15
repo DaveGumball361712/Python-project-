@@ -3,6 +3,7 @@ import random as r
 from menu import Button
 from Economy import EconomyManager
 from ui import SidePanel
+from tutorial import Tutorial
 
 ROWS=12
 COLLUMS=12
@@ -271,8 +272,11 @@ def up(game_map, row, col, eco):                            #ham nang cap cong t
 def run_game(screen):                                  #ham de chay game
     images=load_images()                        
     game_map=generate_map_new()
-    eco = EconomyManager()
-    clock = py.time.Clock()
+    eco=EconomyManager()
+    clock=py.time.Clock()
+    tutorial=Tutorial(game_map,ROWS,COLLUMS,TILE,
+                        lambda row,col:placement(game_map,row,col,"treetop_village"))
+    tutorial_font=py.font.Font(None,32)
 
     is_playing = True
     is_paused = False
@@ -307,7 +311,7 @@ def run_game(screen):                                  #ham de chay game
     while is_playing:
         dt = clock.tick(60) / 1000.0 
 
-        if not is_paused:
+        if not is_paused and not tutorial.active:
             game_dt = dt * time_multiplier
             eco.update(game_dt, game_map)
 
@@ -328,15 +332,27 @@ def run_game(screen):                                  #ham de chay game
                 row=event.pos[1]//TILE
                 # if hang va cot trong ban do, thi se thu dung ham up(..) -> co nang cap duoc hay khong?
                 if 0<=row<ROWS and 0<=col<COLLUMS:
+                    if not is_paused:
+                        if tutorial.active and not tutorial.allowed(row,col):
+                            pass
+                        else:
+                            tile=game_map[row][col]
+                            before=(tile["type"],tile["building"])
+                            up(game_map,row,col,eco)
+                            after=(tile["type"],tile["building"])
+                            if tutorial.active:
+                                tutorial.on_action(row,col,changed=(before != after))
                     # Khóa không cho người chơi nâng cấp/xây nhà nếu đang Pause
-                    if not is_paused: 
-                        up(game_map, row, col, eco)
         
         # Create Map
         draw_map(screen, game_map,images)
 
         # Create menu
         ui_panel.draw(screen, mouse_x, mouse_y, eco, images, is_paused, game_map)
+
+        if tutorial.active:
+            tutorial.update(dt)
+            tutorial.draw(screen,tutorial_font)
 
         py.display.flip()
     return "QUIT"
