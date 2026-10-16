@@ -120,7 +120,7 @@ def run_game(screen):
         # VE BONG TOI
         for cell_x, cell_y in quan_ly_bong_toi.darkened_cells:
             mang_den = py.Surface((map.TILE, map.TILE))
-            mang_den.set_alpha(200)
+            mang_den.set_alpha(255)
             mang_den.fill((0, 0, 0))
             screen.blit(mang_den, (cell_x * map.TILE, cell_y * map.TILE))
             
