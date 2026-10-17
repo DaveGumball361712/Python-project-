@@ -1,8 +1,8 @@
 import random as r
 import pygame as py
-
+import map
 class Tutorial:
-    def __init__(self, game_map, rows, cols, tile, is_treetop_spot):
+    def __init__(self, game_map, rows, cols, tile, treetop_village):
         self.rows, self.cols, self.tile = rows, cols, tile
         self.active = True
         self.step = 1
@@ -10,10 +10,10 @@ class Tutorial:
         self.blink_on = True
 
         forests = [(row, col)
-                    for row in range(rows) for col in range(cols)
+                    for row in range(rows-2) for col in range(cols)
                     if game_map[row][col]["type"]=="forest"
                     and game_map[row][col]["building"] is None
-                    and not is_treetop_spot(row, col)]
+                    and not map.placement(game_map,row,col,"treetop_village")]
         self.target = r.choice(forests) if forests else None
 
         self.messages = {
@@ -79,5 +79,4 @@ class Tutorial:
             for i, line in enumerate(lines):
                 text = font.render(line, True, (40, 40, 40))
                 screen.blit(text, (padding, x0 + padding + i*line_height))
-
 
