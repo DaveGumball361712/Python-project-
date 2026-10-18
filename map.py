@@ -266,10 +266,8 @@ def run_game(screen):                                  #ham de chay game
         # Gọi UI để nó đổi giao diện nút bấm
         ui_panel.toggle_pause_ui(is_paused)
 
-    # HÀM XỬ LÝ KHI BẤM NÚT SPEED
     def action_speed():
         nonlocal time_multiplier
-        # Xoay vòng tốc độ: 1 -> 2 -> 4 -> quay lại 1
         if time_multiplier == 1:
             time_multiplier = 2
         elif time_multiplier == 2:
@@ -279,8 +277,13 @@ def run_game(screen):                                  #ham de chay game
         
         ui_panel.toggle_speed_ui(time_multiplier)
 
+    def action_refresh():
+        nonlocal game_map, eco
+        game_map = generate_map_new()
+        eco = EconomyManager()
+
     #create UI
-    ui_panel = SidePanel(MAP_WIDTH, UI_WIDTH, HEIGHT, action_quit, action_pause, action_speed, TILE, ROWS, COLLUMS)
+    ui_panel = SidePanel(MAP_WIDTH, UI_WIDTH, HEIGHT, action_quit, action_pause, action_speed, action_refresh, TILE, ROWS, COLLUMS)
 
     while is_playing:
         dt = clock.tick(60) / 1000.0 

@@ -2,7 +2,7 @@ import pygame as py
 from menu import Button
 
 class SidePanel:
-    def __init__(self, map_width, ui_width, height, action_quit, action_pause, action_speed, tile_size, rows, cols):
+    def __init__(self, map_width, ui_width, height, action_quit, action_pause, action_speed, action_refresh, tile_size, rows, cols):
         self.map_width = map_width
         self.ui_width = ui_width
         self.height = height
@@ -32,14 +32,17 @@ class SidePanel:
         self.info_surface = py.Surface((self.ui_width, self.height))
         self.info_surface.fill((204, 201, 195))
         
-        # Khởi tạo nút Quit
+        # Quit Button
         self.btn_quit = Button(x=self.map_width + 220, y=556, width=30, height=30, text="x", action=action_quit)
 
-        # Nút Pause 
+        # Pause Button 
         self.btn_pause = Button(x=self.map_width + 180, y=556, width=30, height=30, text="II", action=action_pause)
 
-        # NÚT SPEED
+        # Speed Button
         self.btn_speed = Button(x=self.map_width + 140, y=556, width=30, height=30, text="1x", action=action_speed)
+
+        # Refresh Button
+        self.btn_refresh = Button(x=self.map_width + 100, y=556, width=30, height=30, text="R", action=action_refresh)
 
     def _draw_info_section(self, screen, x, y, title, data_dict, images):
         title_surf = self.font_main.render(title, True, (20, 20, 20))
@@ -242,6 +245,7 @@ class SidePanel:
         self.btn_quit.handle_event(event)
         self.btn_pause.handle_event(event)
         self.btn_speed.handle_event(event)
+        self.btn_refresh.handle_event(event)
 
     # Hàm để vẽ toàn bộ UI ra màn hình
     def draw(self, screen, mouse_x, mouse_y, eco, images, is_paused, game_map):
@@ -309,3 +313,6 @@ class SidePanel:
 
         self.btn_speed.update()
         screen.blit(self.btn_speed.image, self.btn_speed.rect)
+
+        self.btn_refresh.update()
+        screen.blit(self.btn_refresh.image, self.btn_refresh.rect)
