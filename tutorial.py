@@ -36,7 +36,7 @@ class Tutorial:
 
     def update(self, dt):
         self.blink_timer += dt
-        if self.blink_timer >= 0.2:     
+        if self.blink_timer >= 0.5:     
             self.blink_timer = 0.0
             self.blink_on = not self.blink_on
 
