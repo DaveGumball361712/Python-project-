@@ -62,12 +62,13 @@ def run_game(screen):
             game_dt = dt * time_multiplier
             quan_ly_kinh_te.update(game_dt, ban_do_game)
             
-            o_bi_nuot = quan_ly_bong_toi.update(game_dt)
-            if o_bi_nuot:
-                c_dark, r_dark = o_bi_nuot
-                if 0 <= r_dark < map.ROWS and 0 <= c_dark < map.COLLUMS:
-                    ban_do_game[r_dark][c_dark]["darkness"] = True
-                quan_ly_bong_toi.dong_bo_cap_do_thap(ban_do_game)
+            if not huong_dan.active:
+                o_bi_nuot = quan_ly_bong_toi.update(game_dt)
+                if o_bi_nuot:
+                    c_dark, r_dark = o_bi_nuot
+                    if 0 <= r_dark < map.ROWS and 0 <= c_dark < map.COLLUMS:
+                        ban_do_game[r_dark][c_dark]["darkness"] = True
+                    quan_ly_bong_toi.dong_bo_cap_do_thap(ban_do_game)
                 
             # CODE TUTORIAL Cập nhật nháy
             if huong_dan.active:
@@ -120,7 +121,7 @@ def run_game(screen):
         # VE BONG TOI
         for cell_x, cell_y in quan_ly_bong_toi.darkened_cells:
             mang_den = py.Surface((map.TILE, map.TILE))
-            mang_den.set_alpha(200)
+            mang_den.set_alpha(255)
             mang_den.fill((0, 0, 0))
             screen.blit(mang_den, (cell_x * map.TILE, cell_y * map.TILE))
             
