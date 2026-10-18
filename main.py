@@ -2,6 +2,7 @@ import pygame as py
 import sys
 from menu import MainMenu
 import map
+import game
 
 WIDTH=map.WIDTH
 HEIGHT=map.HEIGHT
@@ -16,7 +17,7 @@ def main():
             menu=MainMenu(screen)
             state=menu.run()          
         elif state=="PLAYING":
-            result=map.run_game(screen)
+            result=game.run_game(screen)
             state=result if result else "QUIT"
 
     py.quit()

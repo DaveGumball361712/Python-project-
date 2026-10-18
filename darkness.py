@@ -3,7 +3,7 @@ class DarknessManager:
         self.cols = cols
         self.rows = rows
         self.path_queue = [] 
-        self.current_tick_rate = 6.0 # 6 giây lan 1 ô để dễ test
+        self.current_tick_rate = 0.2 # 6 giây lan 1 ô để dễ test
         self.timer = 0.0
         self.darkened_cells = set() 
         
@@ -48,6 +48,7 @@ class DarknessManager:
             self.darkened_cells.add((x, y))
             return (x, y) # Trả về tọa độ vừa bị nuốt
         return None
+
     def set_resistance_level(self, tower_level):
         """Thay đổi tốc độ loang dựa trên cấp độ của Tower of Light"""
         if tower_level == 1:
@@ -56,6 +57,20 @@ class DarknessManager:
             self.current_tick_rate = 12.0 # 6s + 3s + 3s
         else:
             self.current_tick_rate = 6.0  # Trở lại 6s nếu không có trụ hoặc trụ bị phá
+
+    def dong_bo_cap_do_thap(self, game_map):
+        """Kiểm tra toàn bộ map xem có tháp ánh sáng không để chỉnh tốc độ loang"""
+        cap_do_thap = 0
+        for r in range(self.rows):
+            for c in range(self.cols):
+                tile = game_map[r][c]
+                if not tile["darkness"] and tile["building"] is not None:
+                    if tile["building"] == "tower_of_light":
+                        cap_do_thap = max(cap_do_thap, 1)
+                    elif tile["building"] == "tower_of_light2":
+                        cap_do_thap = max(cap_do_thap, 2)
+        self.set_resistance_level(cap_do_thap)
+
     def check_lose_condition(self):
         """Báo Game Over khi bóng tối đã nuốt trọn toàn bộ ô trên bản đồ"""
         # Trả về True nếu danh sách đường đi đã cạn kiệt
@@ -67,6 +82,8 @@ class DarknessManager:
         """Được gọi khi người chơi xây thành công công trình chiến thắng (The Stone)"""
         # Xóa sạch đường đi còn lại để đóng băng hoàn toàn bóng tối
         self.path_queue.clear()
+        self.darkened_cells.clear()
+
 # --- PHẦN TEST ĐỘC LẬP
 if __name__ == "__main__":
     import time
