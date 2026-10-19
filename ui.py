@@ -2,7 +2,7 @@ import pygame as py
 from menu import Button
 
 class SidePanel:
-    def __init__(self, map_width, ui_width, height, action_quit, action_pause, action_speed, tile_size, rows, cols):
+    def __init__(self, map_width, ui_width, height, action_quit, action_pause, action_speed, action_refresh, tile_size, rows, cols):
         self.map_width = map_width
         self.ui_width = ui_width
         self.height = height
@@ -32,14 +32,17 @@ class SidePanel:
         self.info_surface = py.Surface((self.ui_width, self.height))
         self.info_surface.fill((204, 201, 195))
         
-        # Khởi tạo nút Quit
+        # Quit Button
         self.btn_quit = Button(x=self.map_width + 220, y=556, width=30, height=30, text="x", action=action_quit)
 
-        # Nút Pause 
+        # Pause Button 
         self.btn_pause = Button(x=self.map_width + 180, y=556, width=30, height=30, text="II", action=action_pause)
 
-        # NÚT SPEED
+        # Speed Button
         self.btn_speed = Button(x=self.map_width + 140, y=556, width=30, height=30, text="1x", action=action_speed)
+
+        # Refresh Button
+        self.btn_refresh = Button(x=self.map_width + 100, y=556, width=30, height=30, text="R", action=action_refresh)
 
     def _draw_info_section(self, screen, x, y, title, data_dict, images):
         title_surf = self.font_main.render(title, True, (20, 20, 20))
@@ -85,7 +88,7 @@ class SidePanel:
                 icon_name = res_to_icon.get(res, "icon_wood")
                 screen.blit(images[icon_name], (cx, y))
                 
-                prod_val = self.font_main.render(f"{amount:.2f}", True, (40, 140, 40))
+                prod_val = self.font_main.render(f"{amount:.1f}", True, (40, 140, 40))
                 screen.blit(prod_val, (cx + 25, y))
                 cx += 60
             y += 30
@@ -115,13 +118,6 @@ class SidePanel:
         display_name = base_key.replace("_", " ").title()
         return base_key, display_name, level
 
-    def _get_boost_info(self, base_key):
-        """Hàm phụ trả về thông tin buff liền kề"""
-        if base_key == "forest": return {"W": 25}
-        if base_key == "rocks": return {"S": 25}
-        if base_key == "mushroom": return {"M": 25}
-        return {}
-
     def _get_tile_info(self, mouse_x, mouse_y, game_map, eco):
         if mouse_x >= self.map_width or mouse_y >= self.height:
             return None
@@ -145,7 +141,7 @@ class SidePanel:
             "name": display_name,
             "level": current_level,
             "icon": current_key,
-            "boosts": self._get_boost_info(base_key)
+            "boosts": eco.get_boost(current_key)
         }
 
         # Nếu ô hiện tại đang sản xuất tài nguyên 
@@ -208,7 +204,7 @@ class SidePanel:
                 "icon": next_key,
                 "cost": eco.get_cost(next_key),
                 "production": next_prod,
-                "boosts": self._get_boost_info(next_base)
+                "boosts": eco.get_boost(next_key)
             }
 
         hover_info = {"current": current_data}
@@ -242,6 +238,7 @@ class SidePanel:
         self.btn_quit.handle_event(event)
         self.btn_pause.handle_event(event)
         self.btn_speed.handle_event(event)
+        self.btn_refresh.handle_event(event)
 
     # Hàm để vẽ toàn bộ UI ra màn hình
     def draw(self, screen, mouse_x, mouse_y, eco, images, is_paused, game_map):
@@ -273,7 +270,7 @@ class SidePanel:
             if current_res:
                 res_name, res_amount, res_rate = current_res
                 line1 = f"{res_name}: {res_amount}"
-                line2 = f"+{res_rate:.2f} per second"
+                line2 = f"+{res_rate:.1f} per second"
                 text1 = self.font_small.render(line1, True, (60, 60, 60))
                 text2 = self.font_small.render(line2, True, (60, 60, 60))
                 screen.blit(text1, (self.map_width + 15, 100))
@@ -306,3 +303,6 @@ class SidePanel:
 
         self.btn_speed.update()
         screen.blit(self.btn_speed.image, self.btn_speed.rect)
+
+        self.btn_refresh.update()
+        screen.blit(self.btn_refresh.image, self.btn_refresh.rect)

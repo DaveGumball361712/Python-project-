@@ -47,8 +47,20 @@ def run_game(screen):
             time_multiplier = 1
         ui_panel.toggle_speed_ui(time_multiplier)
 
+    def action_refresh():
+        nonlocal ban_do_game, quan_ly_kinh_te, quan_ly_bong_toi, huong_dan, is_paused, is_win, time_multiplier
+        ban_do_game = map.generate_map_new()
+        quan_ly_kinh_te = EconomyManager()
+        quan_ly_bong_toi = darkness.DarknessManager(map.COLLUMS, map.ROWS)
+        huong_dan = Tutorial(ban_do_game, map.ROWS, map.COLLUMS, map.TILE, lambda r, c: False)
+        is_paused = False
+        is_win = False
+        time_multiplier = 1
+        ui_panel.toggle_pause_ui(False)
+        ui_panel.toggle_speed_ui(1)
+
     # Khởi tạo UI
-    ui_panel = SidePanel(map.MAP_WIDTH, map.UI_WIDTH, map.HEIGHT, action_quit, action_pause, action_speed, map.TILE, map.ROWS, map.COLLUMS)
+    ui_panel = SidePanel(map.MAP_WIDTH, map.UI_WIDTH, map.HEIGHT, action_quit, action_pause, action_speed, action_refresh, map.TILE, map.ROWS, map.COLLUMS)
     ui_panel.toggle_pause_ui(False)
     ui_panel.toggle_speed_ui(1)
     
@@ -60,7 +72,8 @@ def run_game(screen):
         # CẬP NHẬT LOGIC (Chỉ chạy khi không Pause)
         if not is_paused:
             game_dt = dt * time_multiplier
-            quan_ly_kinh_te.update(game_dt, ban_do_game)
+            eco_dt = 0.0 if huong_dan.active else game_dt
+            quan_ly_kinh_te.update(eco_dt, ban_do_game)
             
             if not huong_dan.active:
                 o_bi_nuot = quan_ly_bong_toi.update(game_dt)
@@ -69,7 +82,8 @@ def run_game(screen):
                     if 0 <= r_dark < map.ROWS and 0 <= c_dark < map.COLLUMS:
                         ban_do_game[r_dark][c_dark]["darkness"] = True
                     quan_ly_bong_toi.dong_bo_cap_do_thap(ban_do_game)
-                
+            else:
+                huong_dan.update(dt)
             # CODE TUTORIAL Cập nhật nháy
             if huong_dan.active:
                 huong_dan.update(dt)
@@ -132,7 +146,7 @@ def run_game(screen):
             huong_dan.draw(screen, font_tutorial)
         # ----------------------------------------------------------
         
-      # VẼ BẢNG CHÚC MỪNG CHIẾN THẮNG (UI)
+        # VẼ BẢNG CHÚC MỪNG CHIẾN THẮNG (UI)
         if is_win:
             # Kích thước 
             banner_height = 90
