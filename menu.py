@@ -29,7 +29,7 @@ class Button(p.sprite.Sprite):
         p.draw.rect(self.image, self.border_color, self.image.get_rect(), width= self.border_width)
 
     # Định dạng text
-        font = p.font.Font(None, 36)
+        font = p.font.SysFont('arial', 32)
         text_surf = font.render(self.text, True, (0,0,0))
         text_rect = text_surf.get_rect(center=(self.width//2, self.height//2))
         self.image.blit(text_surf,text_rect)
@@ -74,6 +74,9 @@ class MainMenu:
         running = True
 
         while running:
+           # Xoa man bi ket reset game
+            self.screen.fill((40, 40, 45))
+           
             for event in p.event.get():
                 if event.type == p.QUIT:
                     return "QUIT"
@@ -88,7 +91,6 @@ class MainMenu:
             p.display.flip()
 
 
-# --- CHẠY THỬ CỤC BỘ ---
 if __name__ == "__main__":
     import sys
 
