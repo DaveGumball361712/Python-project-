@@ -115,13 +115,6 @@ class SidePanel:
         display_name = base_key.replace("_", " ").title()
         return base_key, display_name, level
 
-    def _get_boost_info(self, base_key):
-        """Hàm phụ trả về thông tin buff liền kề"""
-        if base_key == "forest": return {"W": 25}
-        if base_key == "rocks": return {"S": 25}
-        if base_key == "mushroom": return {"M": 25}
-        return {}
-
     def _get_tile_info(self, mouse_x, mouse_y, game_map, eco):
         if mouse_x >= self.map_width or mouse_y >= self.height:
             return None
@@ -145,7 +138,7 @@ class SidePanel:
             "name": display_name,
             "level": current_level,
             "icon": current_key,
-            "boosts": self._get_boost_info(base_key)
+            "boosts": eco.get_boost(current_key)
         }
 
         # Nếu ô hiện tại đang sản xuất tài nguyên 
@@ -208,7 +201,7 @@ class SidePanel:
                 "icon": next_key,
                 "cost": eco.get_cost(next_key),
                 "production": next_prod,
-                "boosts": self._get_boost_info(next_base)
+                "boosts": eco.get_boost(next_key)
             }
 
         hover_info = {"current": current_data}

@@ -2,52 +2,44 @@ import math
 
 class EconomyManager:
     def __init__(self):
-        self.inventory = {'W': 1000, 'S': 1000, 'M': 1000, 'T': 0}
+        self.inventory = {'W': 12, 'S': 0, 'M': 0, 'T': 0}
         self.base_rate = {'W': 3, 'S': 3, 'M': 1, 'T': 1}
         self.production_per_sec = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
         self.buy_count = {  
             "forest2" : 0, "forest3": 0, "forest4": 0,
         }
         self.COST_FORMULA = {
-            # Địa hình
             "forest2": {"W": (2, 1)},
             "forest3": {"W": (5, 2.5)},
             "forest4": {"W": (8, 4), "S": (5, 2.5)},
-            "rocks2": {"W": (8, 4)},
-            "rocks3": {"W": (10, 5), "S": (3, 1)},
-            "mushroom2": {"W": (15, 5), "S": (15, 5)},
+            "rocks2": {"W": (8,4)},
+            "rocks3": {"W": (10, 5), "S": {3,1}},
+            "treetop_village": {"W": (15, 7.5)},
+            "mushroom2": {"W": (6,3)},
 
-            # Nhóm làng cơ bản (village & port_village dùng chung nhóm giá)
-            "village_group": {"W": (5, 2.5)},
-            "village2": {"W": (15, 5), "S": (5, 2.5)},
-            "port_village2": {"W": (15, 5), "S": (10, 5)},
-
-            # Làng khai thác Đá (Cấp 1 chỉ tốn Gỗ để mở khóa Đá)
-            "mining_village": {"W": (5, 2.5)},
+            "mining_village": {"W": (5, 2.5), "S" :(2,1)},
             "mining_village2": {"W": (10, 5), "S": (5, 2.5)},
 
-            # Làng trên cây
-            "treetop_village": {"W": (15, 5)},
-            "treetop_village2": {"W": (30, 10), "S": (15, 5)},
-
-            # Làng phép thuật (Cấp 1 chỉ tốn Gỗ + Đá để mở khóa Mana)
-            "magical_village": {"W": (20, 5), "S": (10, 2.5)},
-            "magical_village2": {"W": (40, 10), "S": (20, 5), "M": (10, 2.5)},
-
-            "magical_port_village": {"W": (25, 5), "S": (15, 5)},
-            "magical_port_village2": {"W": (50, 10), "S": (30, 5), "M": (15, 5)},
-
-            # Tháp ánh sáng
-            "tower_of_light": {"W": (50, 0), "S": (50, 0), "M": (20, 0)},
-            "tower_of_light2": {"W": (100, 0), "S": (100, 0), "M": (50, 0), "T": (20, 0)},
-
-            # CÔNG TRÌNH CHIẾN THẮNG
-            "the_stone": {"S": (100, 0), "M": (100, 0)},
+            "village_group": {"W": (5, 2.5)},
+            "village_group2": {"W": (10, 5), "S": (4,2)},
+            
+            "magical_village_group": {"W": (5, 2.5), "M": (1, 0.5)},
+            "magical_village_group2": {"W": (14, 7), "S": (2, 1), "M": (5, 2)},
+            
+            "tower_of_light": {"W": 25, "M": 15},
+            "tower_of_light2": {"W": 50, "M": 25},
+            
+            "logo": {"S": 100, "M": 100}
         }
         self.price_group = {
             "village": "village_group",
             "port_village": "village_group",
+            "magical_village": "magical_village_group",
+            "magical_port_village:" :"magical_village_group",
+            "magical_village2": "magical_village_group2",
+            "magical_port_village2:" :"magical_village_group2",
         }
+
 
         self.timer = 0.0
         self.tick_rate = 1.0 
@@ -61,6 +53,23 @@ class EconomyManager:
             "magical_port_village": "M", "magical_port_village2": "M",
             "tower_of_light": "T", "tower_of_light2": "T"
         }
+
+        self.ADJACENT_BOOST = {
+            "forest": {"W": 25}, "forest2": {"W": 25}, "forest3": {"W": 25}, "forest4": {"W": 50},
+            "rocks2": {"S": 25}, "rocks3": {"S": 25},
+ 
+            "village": {"W": 25, "S": 25},
+            "village2": {"W": 50, "S": 50},
+            
+            "mining_village": {"S": 50},
+            "mining_village2": {"S": 100},
+            
+            "treetop_village": {"W": 50},
+            "treetop_village2": {"W": 100},
+
+            "magical_village": {"W": 25, "M": 25},
+            "magical_village2": {"W": 50, "M": 50},
+            }
 
     # Hàm lấy mã tài nguyên từ ô đất trên map
     def get_res_type(self, tile):
@@ -78,40 +87,29 @@ class EconomyManager:
         # Địa hình mặc định không sinh ra gì cả
         return "E"
 
-    def count_adjacent(self, x, y, grid):
+    def tile_key(self, tile):
+        return tile["building"] if tile["building"] is not None else tile["type"]
+ 
+    def get_boost(self, key):
+        return self.ADJACENT_BOOST.get(key, {})
+ 
+    def adjacent_bonus(self, x, y, grid, res):
         rows, cols = len(grid), len(grid[0])
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        count = 0
-        
-        # Lấy loại tài nguyên của ô trung tâm đang xét (Từ công trình hoặc từ địa hình cấp 2)
-        current_res = self.get_res_type(grid[x][y])
-        if current_res == "E": 
-            return 0
-        
+        total = 0
         for dx, dy in directions:
             nx, ny = x + dx, y + dy
             if 0 <= nx < rows and 0 <= ny < cols:
-                neighbor_tile = grid[nx][ny]
-                
-                # Mỏ đá đứng cạnh forest2, thì forest2 vẫn được tính là "forest" để buff cho gỗ, không buff cho đá.
-                neighbor_type = neighbor_tile["type"].rstrip("0123456789")
-                
-                # Luật Buff
-                if current_res == "W" and neighbor_type == "forest": count += 1
-                elif current_res == "S" and neighbor_type == "rocks": count += 1
-                elif current_res == "M" and neighbor_type == "mushroom": count += 1
-                
-        return count
+                total += self.get_boost(self.tile_key(grid[nx][ny])).get(res, 0)
+        return total
 
     def one_production(self, x, y, grid):
-        current_key = self.get_res_type(grid[x][y])
-        if current_key == "E":
+        res = self.get_res_type(grid[x][y])
+        if res == "E":
             return 0
-            
-        neighbor = self.count_adjacent(x, y, grid)
-        
-        # Tạm thời giữ 
-        return self.base_rate[current_key] * (1 + 0.25 * neighbor)
+
+        bonus = self.adjacent_bonus(x, y, grid, res)
+        return self.base_rate[res] * (1 + bonus / 100)
 
     def total_production(self, grid):
         rows = len(grid)
