@@ -2,7 +2,7 @@ import math
 
 class EconomyManager:
     def __init__(self):
-        self.inventory = {'W': 12, 'S': 0, 'M': 0, 'T': 0}
+        self.inventory = {'W': 1211, 'S': 1110, 'M': 1110, 'T': 11110}
         self.base_rate = {'W': 3, 'S': 3, 'M': 1, 'T': 1}
         self.production_per_sec = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
         self.buy_count = {  
@@ -26,18 +26,18 @@ class EconomyManager:
             "magical_village_group": {"W": (5, 2.5), "M": (1, 0.5)},
             "magical_village_group2": {"W": (14, 7), "S": (2, 1), "M": (5, 2)},
             
-            "tower_of_light": {"W": 25, "M": 15},
-            "tower_of_light2": {"W": 50, "M": 25},
+            "tower_of_light": {"W": (25,0), "M": (15,0)},
+            "tower_of_light2": {"W": (50,0), "M": (25,0)},
             
-            "logo": {"S": 100, "M": 100}
+            "the_stone": {"S": (100,0), "M": (100,0)}
         }
         self.price_group = {
             "village": "village_group",
             "port_village": "village_group",
             "magical_village": "magical_village_group",
-            "magical_port_village:" :"magical_village_group",
+            "magical_port_village" :"magical_village_group",
             "magical_village2": "magical_village_group2",
-            "magical_port_village2:" :"magical_village_group2",
+            "magical_port_village2" :"magical_village_group2",
         }
 
 
@@ -51,7 +51,7 @@ class EconomyManager:
             "mining_village": "S", "mining_village2": "S",
             "magical_village": "M", "magical_village2": "M",
             "magical_port_village": "M", "magical_port_village2": "M",
-            "tower_of_light": "T", "tower_of_light2": "T"
+            "tower_of_light": "M", "tower_of_light2": "M"
         }
 
         self.ADJACENT_BOOST = {
@@ -144,7 +144,7 @@ class EconomyManager:
             for res, (base, step) in self.COST_FORMULA[key].items():
                 cost[res] = math.floor(base + step * count)
             return cost
-        print("Chưa có giá cho:", key)
+        print("Chua co gia cho:", key)
         return {}
     
     def try_buy(self, name):    

@@ -96,7 +96,8 @@ def run_game(screen):
                         # CODE TUTORIAL Chặn click sai
                         if huong_dan.active and not huong_dan.allowed(row, col):
                             continue # Bấm sai ô hướng dẫn thì không cho xây
-                        nha_cu = ban_do_game[row][col]["type"] # Nhớ nhà cũ
+                        tile = ban_do_game[row][col] # Nhớ nhà cũ
+                        before=(tile["type"],tile["building"],tile["level"])
                         # -------------------------------------------------------
                         
                         map.up(ban_do_game, row, col, quan_ly_kinh_te)
@@ -104,7 +105,9 @@ def run_game(screen):
                         
                         # CODE TUTORIAL Báo cáo kết quả
                         if huong_dan.active:
-                            huong_dan.on_action(row, col, nha_cu != ban_do_game[row][col]["type"])
+                            tile = ban_do_game[row][col]
+                            after = (tile["type"], tile["building"], tile["level"])
+                            huong_dan.on_action(row, col, before != after)
                         # --------------------------------------------------------
                         
                         # Kiểm tra thắng (Nâng cấp The Stone)
