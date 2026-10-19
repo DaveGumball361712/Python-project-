@@ -15,6 +15,7 @@ class EconomyManager:
             "rocks2": {"W": (8,4)},
             "rocks3": {"W": (10, 5), "S": {3,1}},
             "treetop_village": {"W": (15, 7.5)},
+            "treetop_village2": {"W": (30, 10),"S":(15,5)},
             "mushroom2": {"W": (6,3)},
 
             "mining_village": {"W": (5, 2.5), "S" :(2,1)},
@@ -33,7 +34,9 @@ class EconomyManager:
         }
         self.price_group = {
             "village": "village_group",
+            "village2":"village_group2",
             "port_village": "village_group",
+            "port_village2":"village_group2",
             "magical_village": "magical_village_group",
             "magical_port_village" :"magical_village_group",
             "magical_village2": "magical_village_group2",
