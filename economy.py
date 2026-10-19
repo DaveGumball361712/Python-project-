@@ -2,7 +2,7 @@ import math
 
 class EconomyManager:
     def __init__(self):
-        self.inventory = {'W': 12, 'S': 0, 'M': 0, 'T': 0}
+        self.inventory = {'W': 1000, 'S': 1000, 'M': 1000, 'T': 0}
         self.base_rate = {'W': 3, 'S': 3, 'M': 1, 'T': 1}
         self.production_per_sec = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
         self.buy_count = {  
@@ -173,4 +173,4 @@ class EconomyManager:
                     prod = self.one_production(r, c, game_map)
                     self.production_per_sec[res_type] += prod
                     # Cộng tài nguyên thực tế theo thời gian trôi qua (dt)
-                    self.inventory[res_type] += prod * dt
+                    self.inventory[res_type] += prod * (dt/60.0)
