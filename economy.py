@@ -38,8 +38,8 @@ class EconomyManager:
             "magical_port_village2": {"W": (50, 10), "S": (30, 5), "M": (15, 5)},
 
             # Tháp ánh sáng
-            "tower_of_light": {"W": (50, 0), "S": (50, 0), "M": (20, 0)},
-            "tower_of_light2": {"W": (100, 0), "S": (100, 0), "M": (50, 0), "T": (20, 0)},
+            "tower_of_light": {"W": (25, 0), "M": (15, 0)},
+            "tower_of_light2": {"W": (50, 0), "M": (25, 0)},
 
             # CÔNG TRÌNH CHIẾN THẮNG
             "the_stone": {"S": (100, 0), "M": (100, 0)},
@@ -59,7 +59,7 @@ class EconomyManager:
             "mining_village": "S", "mining_village2": "S",
             "magical_village": "M", "magical_village2": "M",
             "magical_port_village": "M", "magical_port_village2": "M",
-            "tower_of_light": "T", "tower_of_light2": "T"
+            "tower_of_light": "M", "tower_of_light2": "M"
         }
 
     # Hàm lấy mã tài nguyên từ ô đất trên map
