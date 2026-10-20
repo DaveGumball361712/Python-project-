@@ -2,6 +2,7 @@ import pygame as py
 import random as r
 from menu import Button
 from economy import EconomyManager
+import sys, os
 
 ROWS=12
 COLLUMS=12
@@ -71,13 +72,17 @@ BUILD_PRIORITY = [    #Thu tu uu tien xay dung
     "village",                
 ]
 
+def resource_path(rel):
+    base = getattr(sys, "_MEIPASS", os.path.abspath("."))
+    return os.path.join(base, rel)
+
 def load_images():     #Ham load hinh anh
     def load(name):    #Ham nap ten anh
-        img=py.image.load("images/"+name).convert_alpha()
+        img = py.image.load(resource_path("images/" + name))
         return py.transform.scale(img,(TILE,TILE))     
 
     def load_icon(name):
-        img = py.image.load("images/" + name).convert_alpha()
+        img = py.image.load(resource_path("images/" + name)).convert_alpha()
         return py.transform.scale(img, (25, 25))
     
     return {
