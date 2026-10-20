@@ -4,9 +4,7 @@ class EconomyManager:
     def __init__(self):
         self.inventory = {'W': 12, 'S': 0, 'M': 0, 'T': 0}
         self.production_per_sec = {'W': 0, 'S': 0, 'M': 0, 'T': 0}
-        self.buy_count = {
-            "forest2": 0, "forest3": 0, "forest4": 0,
-        }
+        self.buy_count = {}
 
         # Giá mua: mỗi tài nguyên là (base, step) -> giá = base + step * số lần đã mua
         self.COST_FORMULA = {
@@ -83,7 +81,7 @@ class EconomyManager:
         # % cộng thêm mà một ô đem lại cho các ô kề
         self.ADJACENT_BOOST = {
             "forest": {"W": 25}, "forest2": {"W": 25}, "forest3": {"W": 25}, "forest4": {"W": 50},
-            "rocks2": {"S": 25}, "rocks3": {"S": 25},
+            "rocks": {"S": 25}, "rocks2": {"S": 25}, "rocks3": {"S": 25},
 
             "village": {"W": 25, "S": 25},
             "village2": {"W": 50, "S": 50},
@@ -108,12 +106,6 @@ class EconomyManager:
     def get_base(self, tile):
         return self.BASE_PRODUCTION.get(self.tile_key(tile), {})
 
-    # Tài nguyên chính của ô (loại ghi đầu tiên), không sinh gì thì trả về "E"
-    def get_res_type(self, tile):
-        for res in self.get_base(tile):
-            return res
-        return "E"
-
     def get_boost(self, key):
         return self.ADJACENT_BOOST.get(key, {})
 
@@ -134,13 +126,6 @@ class EconomyManager:
             bonus = self.adjacent_bonus(x, y, grid, res)
             result[res] = base * (1 + bonus / 100)
         return result
-
-    # Sản lượng tài nguyên chính của một ô
-    def one_production(self, x, y, grid):
-        res = self.get_res_type(grid[x][y])
-        if res == "E":
-            return 0
-        return self.tile_production(x, y, grid)[res]
 
     # Tổng sản lượng cả map
     def total_production(self, grid):
