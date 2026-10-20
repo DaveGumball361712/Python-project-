@@ -1,7 +1,7 @@
 import pygame as py
 import map
 import darkness
-from economy import EconomyManager
+from Economy import EconomyManager
 from ui import SidePanel
 
 def run_game(screen):
