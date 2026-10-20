@@ -116,13 +116,13 @@ class EconomyManager:
         for dx, dy in directions:
             nx, ny = x + dx, y + dy
             if 0 <= nx < rows and 0 <= ny < cols:
-                if not grid[x][y]["darkness", False]:
+                if not grid[nx][ny].get["darkness", False]:
                     total += self.get_boost(self.tile_key(grid[nx][ny])).get(res, 0)
         return total
 
     # Sản lượng của MỘT ô cho TẤT CẢ tài nguyên, ví dụ {"M": 1.25, "W": 2.5}
     def tile_production(self, x, y, grid):
-        if grid[x][y]["darkness", False]: return{}
+        if grid[x][y].get["darkness", False]: return{}
         result = {}
         for res, base in self.get_base(grid[x][y]).items():
             bonus = self.adjacent_bonus(x, y, grid, res)
