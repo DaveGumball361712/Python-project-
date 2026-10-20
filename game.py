@@ -7,33 +7,32 @@ from ui import SidePanel
 def run_game(screen):
     clock = py.time.Clock()
     
-    # Khởi tạo dữ liệu ván mới (Reset mọi thứ mỗi khi bấm Start)
-    hinh_anh_map = map.load_images()
-    ban_do_game = map.generate_map_new()
-    quan_ly_kinh_te = EconomyManager()
-    quan_ly_bong_toi = darkness.DarknessManager(map.COLLUMS, map.ROWS)
+    # init data
+    map_imgs = map.load_images()
+    game_map = map.generate_map_new()
+    eco_manager = EconomyManager()
+    dark_manager = darkness.DarknessManager(map.COLLUMS, map.ROWS)
     
-    # CODE TUTORIAL Khởi tạo
+    # init tutorial
     from tutorial import Tutorial
     font_tutorial = py.font.SysFont('arial', 20, bold=True)
-    huong_dan = Tutorial(ban_do_game, map.ROWS, map.COLLUMS, map.TILE, lambda r, c: False)
-    # ------------------------------------------------
+    tutorial_mgr = Tutorial(game_map, map.ROWS, map.COLLUMS, map.TILE, lambda r, c: False)
     
     is_paused = False
     time_multiplier = 1
     is_win = False
     running = True
-    ket_qua_tra_ve = "MENU"
+    next_state = "MENU"
     
-    # Các hàm tương tác nút bấm UI
+    # ui callbacks
     def action_quit():
-        nonlocal running, ket_qua_tra_ve
+        nonlocal running, next_state
         running = False
-        ket_qua_tra_ve = "MENU"
+        next_state = "MENU"
 
     def action_pause():
         nonlocal is_paused, is_win
-        if is_win: return # Thắng rồi thì khóa nút Pause
+        if is_win: return # thang roi thi block nut pause
         is_paused = not is_paused
         ui_panel.toggle_pause_ui(is_paused)
 
@@ -48,128 +47,123 @@ def run_game(screen):
         ui_panel.toggle_speed_ui(time_multiplier)
 
     def action_refresh():
-        nonlocal ban_do_game, quan_ly_kinh_te, quan_ly_bong_toi, huong_dan, is_paused, is_win, time_multiplier
-        ban_do_game = map.generate_map_new()
-        quan_ly_kinh_te = EconomyManager()
-        quan_ly_bong_toi = darkness.DarknessManager(map.COLLUMS, map.ROWS)
-        huong_dan = Tutorial(ban_do_game, map.ROWS, map.COLLUMS, map.TILE, lambda r, c: False)
-        is_paused = False
+        nonlocal game_map, eco_manager, dark_manager, tutorial_mgr, is_win, is_paused
+        game_map = map.generate_map_new()
+        eco_manager = EconomyManager()
+        dark_manager = darkness.DarknessManager(map.COLLUMS, map.ROWS)
+        tutorial_mgr = Tutorial(game_map, map.ROWS, map.COLLUMS, map.TILE, lambda r, c: False)
         is_win = False
-        time_multiplier = 1
-        ui_panel.toggle_pause_ui(False)
-        ui_panel.toggle_speed_ui(1)
+        is_paused = False
 
-    # Khởi tạo UI
-    ui_panel = SidePanel(map.MAP_WIDTH, map.UI_WIDTH, map.HEIGHT, action_quit, action_pause, action_speed, action_refresh, map.TILE, map.ROWS, map.COLLUMS)
+    # init ui panel
+    ui_panel = SidePanel(map.MAP_WIDTH, map.UI_WIDTH, map.HEIGHT, action_quit, action_pause, action_speed,action_refresh, map.TILE, map.ROWS, map.COLLUMS)
     ui_panel.toggle_pause_ui(False)
     ui_panel.toggle_speed_ui(1)
     
-    # Vòng lặp Game Play
+    # game loop
     while running:
         dt = clock.tick(60) / 1000.0
         mouse_x, mouse_y = py.mouse.get_pos()
         
-        # CẬP NHẬT LOGIC (Chỉ chạy khi không Pause)
+        # update logic
         if not is_paused:
-            game_dt = dt * time_multiplier
-            eco_dt = 0.0 if huong_dan.active else game_dt
-            quan_ly_kinh_te.update(eco_dt, ban_do_game)
-            
-            if not huong_dan.active:
-                o_bi_nuot = quan_ly_bong_toi.update(game_dt)
+            game_dt = dt * time_multiplier          # nhân hệ số tua nhanh
+
+            eco_manager.update(game_dt, game_map)   # kinh tế tua theo tốc độ
+
+            # Bóng tối chỉ lan sau khi tutorial kết thúc
+            if not tutorial_mgr.active:
+                o_bi_nuot = dark_manager.update(game_dt)   # <-- game_dt, KHÔNG phải dt
                 if o_bi_nuot:
                     c_dark, r_dark = o_bi_nuot
                     if 0 <= r_dark < map.ROWS and 0 <= c_dark < map.COLLUMS:
-                        ban_do_game[r_dark][c_dark]["darkness"] = True
-                    quan_ly_bong_toi.dong_bo_cap_do_thap(ban_do_game)
-            else:
-                huong_dan.update(dt)
-            # CODE TUTORIAL Cập nhật nháy
-            if huong_dan.active:
-                huong_dan.update(dt)
-            # ----------------------------------------------------
+                        game_map[r_dark][c_dark]["darkness"] = True
+                    dark_manager.dong_bo_cap_do_thap(game_map)
+
+            # Nháy mũi tên tutorial (chạy khi CÒN tutorial)
+            if tutorial_mgr.active:
+                tutorial_mgr.update(dt)
                 
-        # Kiểm tra thua
-        if quan_ly_bong_toi.check_lose_condition() and len(quan_ly_bong_toi.darkened_cells) >= map.ROWS * map.COLLUMS:
+        # check lose
+        if dark_manager.check_lose_condition() and len(dark_manager.darkened_cells) >= map.ROWS * map.COLLUMS:
             print("--- GAME OVER: Ban do da bi nuot sach! ---")
             return "MENU"
             
-        # XỬ LÝ SỰ KIỆN
+        # event loop
         for event in py.event.get():
             if event.type == py.QUIT:
                 return "QUIT"
                 
             ui_panel.handle_event(event)
             
-            # Xử lý click chuột xây nhà/nâng cấp
+            # handle click xay nha
             if event.type == py.MOUSEBUTTONDOWN and event.button == 1:
                 col = event.pos[0] // map.TILE
                 row = event.pos[1] // map.TILE
                 if 0 <= row < map.ROWS and 0 <= col < map.COLLUMS:
                     if not is_paused:
-                        # CODE TUTORIAL Chặn click sai
-                        if huong_dan.active and not huong_dan.allowed(row, col):
-                            continue # Bấm sai ô hướng dẫn thì không cho xây
-                        nha_cu = ban_do_game[row][col]["type"] # Nhớ nhà cũ
-                        # -------------------------------------------------------
+                        # chan click neu bam sai o tutorial
+                        if tutorial_mgr.active and not tutorial_mgr.allowed(row, col):
+                            continue 
                         
-                        map.up(ban_do_game, row, col, quan_ly_kinh_te)
-                        quan_ly_bong_toi.dong_bo_cap_do_thap(ban_do_game)
+                        tile = game_map[row][col]
+                        before=(tile["type"],tile["building"],tile["level"])
                         
-                        # CODE TUTORIAL Báo cáo kết quả
-                        if huong_dan.active:
-                            huong_dan.on_action(row, col, nha_cu != ban_do_game[row][col]["type"])
-                        # --------------------------------------------------------
+                        map.up(game_map, row, col, eco_manager)
+                        dark_manager.dong_bo_cap_do_thap(game_map)
                         
-                        # Kiểm tra thắng (Nâng cấp The Stone)
-                        if ban_do_game[row][col]["type"] == "the_stone":
-                            quan_ly_bong_toi.trigger_win_condition()
+                        # gui ket qua cho tutorial
+                        if tutorial_mgr.active:
+                            tile = game_map[row][col]
+                            after=(tile["type"],tile["building"],tile["level"])
+                            tutorial_mgr.on_action(row, col, before != after)
+                        
+                        # check win
+                        if game_map[row][col]["type"] == "the_stone":
+                            dark_manager.trigger_win_condition()
                             is_win = True
                             is_paused = True
                             ui_panel.toggle_pause_ui(True)
                             
-        # VẼ ĐỒ HỌA
+        # render
         screen.fill((0, 0, 0))
-        map.draw_map(screen, ban_do_game, hinh_anh_map)
+        map.draw_map(screen, game_map, map_imgs)
 
-        # VE BONG TOI
-        for cell_x, cell_y in quan_ly_bong_toi.darkened_cells:
-            mang_den = py.Surface((map.TILE, map.TILE))
-            mang_den.set_alpha(255)
-            mang_den.fill((0, 0, 0))
-            screen.blit(mang_den, (cell_x * map.TILE, cell_y * map.TILE))
+        # render darkness
+        for cell_x, cell_y in dark_manager.darkened_cells:
+            dark_layer = py.Surface((map.TILE, map.TILE))
+            dark_layer.set_alpha(200)
+            dark_layer.set_alpha(255)
+            dark_layer.fill((0, 0, 0))
+            screen.blit(dark_layer, (cell_x * map.TILE, cell_y * map.TILE))
             
-        ui_panel.draw(screen, mouse_x, mouse_y, quan_ly_kinh_te, hinh_anh_map, is_paused, ban_do_game)
+        ui_panel.draw(screen, mouse_x, mouse_y, eco_manager, map_imgs, is_paused, game_map)
         
-        # CODE TUTORIAL Vẽ bảng hướng dẫn
-        if huong_dan.active:
-            huong_dan.draw(screen, font_tutorial)
-        # ----------------------------------------------------------
+        # render tutorial
+        if tutorial_mgr.active:
+            tutorial_mgr.draw(screen, font_tutorial)
         
-        # VẼ BẢNG CHÚC MỪNG CHIẾN THẮNG (UI)
+        # render win ui
         if is_win:
-            # Kích thước 
             banner_height = 90
-            toa_do_y = map.HEIGHT - banner_height
+            pos_y = map.HEIGHT - banner_height
             
-            # Vẽ nền màu xám và viền màu nâu y hệt style của Phút
-            py.draw.rect(screen, (204, 201, 195), (0, toa_do_y, map.MAP_WIDTH, banner_height))
-            py.draw.line(screen, (170, 155, 140), (0, toa_do_y), (map.MAP_WIDTH, toa_do_y), 3)
+            # bg & border
+            py.draw.rect(screen, (204, 201, 195), (0, pos_y, map.MAP_WIDTH, banner_height))
+            py.draw.line(screen, (170, 155, 140), (0, pos_y), (map.MAP_WIDTH, pos_y), 3)
             
-            # Tạo 2 dòng chữ với kích thước khác nhau
             font_win = py.font.SysFont('arial', 20, bold=True)
             font_sub = py.font.SysFont('arial', 16, italic=True)
             
-            chu_win = font_win.render("You saved the land from the darkness! Great job!", True, (40, 40, 40))
-            chu_sub = font_sub.render("Press the [X] button to return to the menu.", True, (100, 100, 100)) # Dòng phụ màu xám nhạt hơn
+            win_text = font_win.render("You saved the land from the darkness! Great job!", True, (40, 40, 40))
+            sub_text = font_sub.render("Press the [X] button to return to the menu.", True, (100, 100, 100))
             
-            # Căn giữa tọa độ X cho cả 2 dòng
-            toa_do_x_win = (map.MAP_WIDTH - chu_win.get_width()) // 2
-            toa_do_x_sub = (map.MAP_WIDTH - chu_sub.get_width()) // 2
+            pos_x_win = (map.MAP_WIDTH - win_text.get_width()) // 2
+            pos_x_sub = (map.MAP_WIDTH - sub_text.get_width()) // 2
             
-            # Vẽ lên màn hình 
-            screen.blit(chu_win, (toa_do_x_win, toa_do_y + 20))
-            screen.blit(chu_sub, (toa_do_x_sub, toa_do_y + 55))
+            screen.blit(win_text, (pos_x_win, pos_y + 20))
+            screen.blit(sub_text, (pos_x_sub, pos_y + 55))
+            
         py.display.flip()
         
-    return ket_qua_tra_ve
+    return next_state
