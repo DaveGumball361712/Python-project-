@@ -26,8 +26,8 @@ IMAGE_DATA={      #Chuyen doi hinh anh thanh du lieu
 
 BUILDING_IMAGE_DATA={       #Chuyen doi hinh anh thanh du lieu cho cong trinh
     "tower_of_light":"tower_of_light","tower_of_light2":"tower_of_light2",
-    "village":"village","village2":"village2",
-    "port_village":"port_village","port_village2":"port_village2",
+    "village":"village","village2":"village2","village3":"village3","village4":"village4",
+    "port_village":"port_village","port_village2":"port_village2","port_village3":"port_village3","port_village4":"port_village4",
     "mining_village":"mining_village","mining_village2":"mining_village2",
     "treetop_village":"treetop_village","treetop_village2":"treetop_village2",
     "magical_port_village":"magical_port_village","magical_port_village2":"magical_port_village2",

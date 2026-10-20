@@ -145,11 +145,12 @@ class SidePanel:
         }
 
         # Nếu ô hiện tại đang sản xuất tài nguyên 
-        res_type = eco.get_res_type(tile)
-        if res_type != "E":
-            prod_val = round(eco.one_production(row, col, game_map), 2)
-            if prod_val > 0:
-                current_data["production"] = {res_type: prod_val}
+        prod = {}
+        for res, val in eco.tile_production(row, col, game_map).items():
+            if val > 0:
+                prod[res] = round(val, 2)
+        if prod:
+            current_data["production"] = prod
 
         # XÁC ĐỊNH BƯỚC NÂNG CẤP TIẾP THEO 
         next_key = None
@@ -187,12 +188,10 @@ class SidePanel:
                 tile["type"] = next_key
                 tile["level"] = old_level + 1
 
-            next_res = eco.get_res_type(tile)
             next_prod = {}
-            if next_res != "E":
-                val = round(eco.one_production(row, col, game_map), 2)
+            for res, val in eco.tile_production(row, col, game_map).items():
                 if val > 0:
-                    next_prod = {next_res: val}
+                    next_prod[res] = round(val, 2)
 
             # Trả lại nguyên trạng cho ô đất sau khi tính xong
             tile["type"], tile["building"], tile["level"] = old_type, old_building, old_level
