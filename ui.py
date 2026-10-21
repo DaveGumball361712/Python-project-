@@ -81,7 +81,7 @@ class SidePanel:
         # Vẽ Production 
         prod = data_dict.get("production")
         if prod:
-            screen.blit(self.font_main.render("Production per second:", True, (20, 20, 20)), (x, y))
+            screen.blit(self.font_main.render("Production per minute:", True, (20, 20, 20)), (x, y))
             y += 25
             cx = x
             for res, amount in prod.items():
@@ -269,7 +269,7 @@ class SidePanel:
             if current_res:
                 res_name, res_amount, res_rate = current_res
                 line1 = f"{res_name}: {res_amount}"
-                line2 = f"+{res_rate:.1f} per second"
+                line2 = f"+{res_rate:.1f} per minute"
                 text1 = self.font_small.render(line1, True, (60, 60, 60))
                 text2 = self.font_small.render(line2, True, (60, 60, 60))
                 screen.blit(text1, (self.map_width + 15, 100))
