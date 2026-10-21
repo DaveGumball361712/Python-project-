@@ -67,16 +67,15 @@ class Tutorial:
                 py.draw.polygon(screen, (102,178,255),
                                 [(y-10, x-20), (y+10, x-20), (y, x-4)])
         msg = self.messages.get(self.step)
-        if msg:
-            map_width = self.cols * self.tile
-            padding = 10
-            line_height = font.get_linesize()
-            lines = self.wrap_text(msg, font, map_width - 2*padding)   
-            banner_height = len(lines) * line_height + 2*padding
-            x0 = self.rows*self.tile - banner_height
-            py.draw.rect(screen, (204, 201, 195), (0, x0, map_width, banner_height))
-            py.draw.line(screen, (170, 155, 140), (0, x0), (map_width, x0), 3)
-            for i, line in enumerate(lines):
-                text = font.render(line, True, (40, 40, 40))
-                screen.blit(text, (padding, x0 + padding + i*line_height))
+        map_width = self.cols * self.tile
+        padding = 10
+        line_height = font.get_linesize()
+        lines = self.wrap_text(msg, font, map_width - 2*padding)   
+        banner_height = len(lines) * line_height + 2*padding
+        x0 = self.rows*self.tile - banner_height
+        py.draw.rect(screen, (204, 201, 195), (0, x0, map_width, banner_height))
+        py.draw.line(screen, (170, 155, 140), (0, x0), (map_width, x0), 3)
+        for i, line in enumerate(lines):
+            text = font.render(line, True, (40, 40, 40))
+            screen.blit(text, (padding, x0 + padding + i*line_height))
 

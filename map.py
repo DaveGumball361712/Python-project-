@@ -14,26 +14,6 @@ WIDTH = MAP_WIDTH + UI_WIDTH
 HEIGHT=ROWS*TILE
 LOGO_CELLS=[(5,5),(5,6),(6,5),(6,6)]
 
-IMAGE_DATA={      #Chuyen doi hinh anh thanh du lieu
-    "forest":"forest","forest2":"forest2","forest3":"forest3","forest4":"forest4",
-    "fields":"fields",
-    "rocks":"rocks","rocks2":"rocks2","rocks3":"rocks3",
-    "water":"water",
-    "logo":"logo",
-    "mushroom":"mushroom","mushroom2":"mushroom2",
-    "the_stone": "the_stone",
-}
-
-BUILDING_IMAGE_DATA={       #Chuyen doi hinh anh thanh du lieu cho cong trinh
-    "tower_of_light":"tower_of_light","tower_of_light2":"tower_of_light2",
-    "village":"village","village2":"village2","village3":"village3","village4":"village4",
-    "port_village":"port_village","port_village2":"port_village2","port_village3":"port_village3","port_village4":"port_village4",
-    "mining_village":"mining_village","mining_village2":"mining_village2",
-    "treetop_village":"treetop_village","treetop_village2":"treetop_village2",
-    "magical_port_village":"magical_port_village","magical_port_village2":"magical_port_village2",
-    "magical_village":"magical_village","magical_village2":"magical_village2",
-}
-
 BUILDING_RULES={    #Luat xay dung cong trinh
     "village":{"on":["fields"],"next_to":{}},
     "port_village":{"on":["fields"],"next_to":{"water":1},"diagonal":False},
@@ -72,17 +52,14 @@ BUILD_PRIORITY = [    #Thu tu uu tien xay dung
     "village",                
 ]
 
-def resource_path(rel):
-    base = getattr(sys, "_MEIPASS", os.path.abspath("."))
-    return os.path.join(base, rel)
 
 def load_images():     #Ham load hinh anh
     def load(name):    #Ham nap ten anh
-        img = py.image.load(resource_path("images/" + name))
+        img = py.image.load("images/" + name)
         return py.transform.scale(img,(TILE,TILE))     
 
     def load_icon(name):
-        img = py.image.load(resource_path("images/" + name)).convert_alpha()
+        img = py.image.load("images/" + name).convert_alpha()
         return py.transform.scale(img, (25, 25))
     
     return {
@@ -119,7 +96,6 @@ def load_images():     #Ham load hinh anh
         "the_stone": load("the_stone.png"),
     }
 
-# Giữ nguyên thuật toán tạo hồ nước mới nhất của Phút
 def grow_blob(occupied, size):
     empties = [(row,col) for row in range(ROWS) for col in range(COLLUMS) if (row,col) not in occupied]
     if not empties:
@@ -138,7 +114,7 @@ def grow_blob(occupied, size):
             frontier.remove(cell)                     
     return blob
 
-def generate_map():  #ham tao map co ho nuoc cua Phut
+def generate_map():  
     lr,lc=r.choice(LOGO_CELLS)  
     n_forest=r.randint(37,40)   
     n_rocks=r.randint(14,15)    
@@ -150,8 +126,6 @@ def generate_map():  #ham tao map co ho nuoc cua Phut
     while remaining > 0:
         lake_size = min(remaining, r.randint(3,7))  
         blob = grow_blob(occupied, lake_size)
-        if not blob:
-            break
         water += blob; remaining -= len(blob)
     water = set(water)
     bag=(["forest"]*n_forest+["rocks"]*n_rocks+["fields"]*n_fields+["mushroom"]*n_mushroom)
@@ -168,15 +142,13 @@ def generate_map():  #ham tao map co ho nuoc cua Phut
     return game_map
 
 def draw_map(screen, game_map, images):    #ham ve map
-    for row in range(ROWS):                
+    for row in range(ROWS):
         for col in range(COLLUMS):
-            tile=game_map[row][col]   
-            screen.blit(images[IMAGE_DATA[tile["type"]]],(col*TILE,row*TILE))    
-            b=tile["building"]    
-            if b is not None:    
-                img=BUILDING_IMAGE_DATA.get(b)
-                if img is not None:      
-                    screen.blit(images[img],(col*TILE,row*TILE))    
+            tile = game_map[row][col]
+            screen.blit(images[tile["type"]], (col*TILE, row*TILE))
+            b = tile["building"]
+            if b is not None and b in images:
+                screen.blit(images[b], (col*TILE, row*TILE)) 
 
 def neighbor_tile(game_map,row,col,diagonal=True):     #ham kiem tra o lan can
     direction=[(-1,0),(1,0),(0,1),(0,-1)]              
@@ -238,7 +210,7 @@ def building_for_tile(game_map, row, col):              #ham xac dinh cong trinh
     for name in BUILD_PRIORITY:                         
         if placement(game_map, row, col, name):         
             return name                                 
-    return None                                         
+    return                                         
 
 def generate_map_new():                                 
     for _ in range(1000):                
@@ -255,7 +227,6 @@ def build(game_map, row, col, name):                   #ham xay cong trinh
     tile["level"] = 1
     return True
 
-# Hàm up đã tích hợp sẵn eco.try_buy của Đạt & Tony
 def up(game_map, row, col, eco):                            #ham nang cap cong trinh
     tile = game_map[row][col]                          
     if tile["darkness"]:                               
