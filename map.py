@@ -2,7 +2,6 @@ import pygame as py
 import random as r
 from menu import Button
 from economy import EconomyManager
-import sys, os
 
 ROWS=12
 COLLUMS=12
